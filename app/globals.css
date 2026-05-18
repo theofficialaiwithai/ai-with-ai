@@ -3,21 +3,43 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg: #0D0D1A; --surface: #1A1A2E; --surface-2: #232340; --surface-3: #2a2a50;
+  --code-bg: #0A0A16;
+  --border: rgba(124,58,237,0.18); --border-subtle: rgba(255,255,255,0.06);
+  --violet: #7C3AED; --violet-light: #9D5AF0;
+  --violet-dim: rgba(124,58,237,0.15); --violet-glow: rgba(124,58,237,0.35);
+  --emerald: #10B981; --emerald-dim: rgba(16,185,129,0.15); --emerald-glow: rgba(16,185,129,0.3);
+  --amber: #F59E0B; --amber-dim: rgba(245,158,11,0.15); --amber-glow: rgba(245,158,11,0.3);
+  --red: #EF4444; --red-dim: rgba(239,68,68,0.15);
+  --text: #F8FAFC; --text-muted: #94A3B8; --text-faint: #4A5568;
+  --dot-color: rgba(124,58,237,0.08);
+  --orb1: rgba(124,58,237,0.12); --orb2: rgba(16,185,129,0.07);
+  --nav-bg: rgba(13,13,26,0.85);
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-serif: 'Instrument Serif', serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--text);
+}
+
+body::before {
+  content: ''; position: fixed; top: -20vh; left: -10vw;
+  width: 60vw; height: 60vh;
+  background: radial-gradient(ellipse, var(--orb1) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+body::after {
+  content: ''; position: fixed; bottom: -20vh; right: -10vw;
+  width: 50vw; height: 50vh;
+  background: radial-gradient(ellipse, var(--orb2) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
 }
 
 @layer utilities {

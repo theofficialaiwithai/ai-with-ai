@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.78",
     "@anthropic-ai/sdk": "^0.96.0",
     "@clerk/nextjs": "^7.3.7",
     "@neondatabase/serverless": "^1.1.0",
@@ -22,10 +23,14 @@
     "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.12.3",
     "stripe": "^22.1.1",
+    "svix": "^1.93.0",
     "tailwind-merge": "^3.6.0",
-    "uploadthing": "^7.7.4"
+    "uploadthing": "^7.7.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20",

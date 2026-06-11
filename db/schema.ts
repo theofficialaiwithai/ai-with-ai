@@ -18,6 +18,11 @@ export const profiles = pgTable('profiles', {
   totalSessionsCompleted: integer('total_sessions_completed').notNull().default(0),
   freeSessionUsed: boolean('free_session_used').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  // API keys (encrypted at rest)
+  anthropicApiKey: text('anthropic_api_key'),
+  openaiApiKey: text('openai_api_key'),
+  // Model preference
+  preferredModel: text('preferred_model').notNull().default('claude-sonnet-4-5'),
 })
 
 export const sessions = pgTable('sessions', {

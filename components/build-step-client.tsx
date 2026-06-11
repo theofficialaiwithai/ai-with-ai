@@ -193,7 +193,7 @@ export default function BuildStepClient({ sessionId, step, allSteps, totalSteps 
 
   const chatEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const chatInputRef = useRef<HTMLInputElement>(null)
+  const chatInputRef = useRef<HTMLTextAreaElement>(null)
 
   const checklist = step.verificationChecklist ?? []
   const allChecked = checklist.length === 0 || checked.size === checklist.length
@@ -245,6 +245,10 @@ export default function BuildStepClient({ sessionId, step, allSteps, totalSteps 
     setChatMessages(prev => [...prev, userMsg])
     setChatInput('')
     setImagePreview(null)
+    // Reset textarea height back to one row
+    if (chatInputRef.current) {
+      chatInputRef.current.style.height = 'auto'
+    }
 
     // Capture & clear image state before async work
     const b64 = imageBase64
@@ -588,12 +592,22 @@ export default function BuildStepClient({ sessionId, step, allSteps, totalSteps 
                   📎
                 </button>
 
-                {/* text input */}
-                <input
-                  ref={chatInputRef}
+                {/* text input — auto-growing textarea */}
+                <textarea
+                  ref={chatInputRef as React.RefObject<HTMLTextAreaElement>}
                   value={chatInput}
+                  rows={1}
                   onChange={e => setChatInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+                  onInput={e => {
+                    e.currentTarget.style.height = 'auto'
+                    e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px'
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault()
+                      handleSend()
+                    }
+                  }}
                   placeholder="Ask about this step, paste an error…"
                   disabled={chatStreaming}
                   style={{
@@ -601,7 +615,9 @@ export default function BuildStepClient({ sessionId, step, allSteps, totalSteps 
                     border: '1px solid rgba(255,255,255,0.08)',
                     borderRadius: 8, padding: '8px 12px',
                     fontFamily: FB, fontSize: 14, color: '#F8FAFC',
-                    outline: 'none',
+                    outline: 'none', resize: 'none', overflow: 'hidden',
+                    maxHeight: 120, lineHeight: 1.5,
+                    display: 'block', width: '100%', boxSizing: 'border-box',
                   }}
                 />
 

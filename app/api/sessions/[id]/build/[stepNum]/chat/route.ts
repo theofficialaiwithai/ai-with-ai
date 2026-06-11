@@ -1,14 +1,26 @@
 export const maxDuration = 60
 
 import { auth } from '@clerk/nextjs/server'
+import { db } from '@/db'
+import { profiles } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { decrypt } from '@/lib/encrypt'
 import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
+import { createOpenAI } from '@ai-sdk/openai'
 import { NextResponse } from 'next/server'
 
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
 }
+
+/* Anthropic model IDs */
+const ANTHROPIC_MODELS = new Set([
+  'claude-haiku-3-5',
+  'claude-sonnet-4-5',
+  'claude-opus-4-5',
+])
 
 export async function POST(
   req: Request,
@@ -32,16 +44,36 @@ export async function POST(
     return NextResponse.json({ error: 'message or image required' }, { status: 400 })
   }
 
-  const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
+  /* ── Resolve API key + model from user profile ── */
+  const profile = await db.query.profiles.findFirst({ where: eq(profiles.id, userId) })
 
-  // Build the latest user message — include image if provided
-  // Reconstruct full conversation for Claude
+  const preferredModel = profile?.preferredModel ?? 'claude-sonnet-4-5'
+  const isOpenAI = !ANTHROPIC_MODELS.has(preferredModel)
+
+  // Decrypt user's stored key if present; fall back to master key
+  let model
+  if (isOpenAI && profile?.openaiApiKey) {
+    const decrypted = decrypt(profile.openaiApiKey)
+    if (decrypted) {
+      model = createOpenAI({ apiKey: decrypted })(preferredModel)
+    }
+  }
+
+  if (!model) {
+    // Always fall back to Anthropic Sonnet with the master key
+    const anthropicKey = (profile?.anthropicApiKey && decrypt(profile.anthropicApiKey))
+      || process.env.ANTHROPIC_API_KEY!
+    model = createAnthropic({ apiKey: anthropicKey })(
+      ANTHROPIC_MODELS.has(preferredModel) ? preferredModel : 'claude-sonnet-4-5'
+    )
+  }
+
+  /* ── Build message history ── */
   const messages = [
     ...history.map((m: ChatMessage) => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     })),
-    // Latest user message — include image if provided
     ...(imageBase64
       ? [{
           role: 'user' as const,
@@ -54,7 +86,7 @@ export async function POST(
   ]
 
   const result = streamText({
-    model: anthropic('claude-sonnet-4-5'),
+    model,
     system: `You are a helpful coding assistant inside an AI-powered build tool. The user is currently working on this build step:
 
 Step: "${stepTitle}"

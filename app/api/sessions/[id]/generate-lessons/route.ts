@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/db'
 import { sessions, messages, learnLessons } from '@/db/schema'
 import { eq, asc } from 'drizzle-orm'
-import { streamText } from 'ai'
+import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { NextResponse } from 'next/server'
 
@@ -43,42 +43,26 @@ export async function POST(
     .map(m => `${m.role === 'user' ? 'Learner' : 'Assistant'}: ${m.content}`)
     .join('\n\n')
 
+  // Compact prompt — keep output under 3500 tokens to stay within 60s
   const userPrompt = `Platform: ${plat}
 
-Intake conversation:
+Intake:
 ${conversation}
 
-Generate 5-8 progressive lessons tailored to this learner's starting point and goals. Return ONLY a valid JSON array — no markdown, no explanation, no code fences.
+Generate exactly 5 progressive lessons. Return ONLY a JSON array, no markdown, no fences.
 
-Schema for each lesson object:
-{
-  "lessonNumber": number,
-  "title": string (max 40 chars),
-  "conceptualFrame": string (explain the key concept clearly in plain prose, max 200 words),
-  "demonstrationExample": string (a specific code snippet, prompt template, or step-by-step walkthrough — make it concrete and copy-pasteable),
-  "microTask": string (one specific task the learner does themselves to practice),
-  "microTaskType": "do" | "quiz",
-  "quizQuestions": null | [{"question": string, "options": ["A","B","C","D"], "correctIndex": 0, "explanation": string}],
-  "resources": null | [{"title": string, "url": string, "type": "docs" | "video" | "example"}]
-}
+Each lesson: {"lessonNumber":number,"title":string(max 35 chars),"conceptualFrame":string(60-80 words plain prose),"demonstrationExample":string(concrete example or short snippet),"microTask":string(one clear task),"microTaskType":"do"|"quiz","quizQuestions":null|[{"question":string,"options":["A","B","C","D"],"correctIndex":0-3,"explanation":string}],"resources":null|[{"title":string,"url":string,"type":"docs"|"video"|"example"}]}
 
-Rules:
-- If microTaskType is "quiz", include 3-5 quizQuestions. If "do", set quizQuestions to null.
-- Alternate between "do" and "quiz" across lessons (start with "do").
-- Build progressively: first lessons use what learner already knows, later lessons stretch toward their goal.
-- For resources: 1-2 real links per lesson (e.g. official docs, YouTube tutorial). Set to null if unsure.
-- Keep demonstrationExample practical and relevant to ${plat}.`
+Rules: quiz lessons include 3 questions. Alternate do/quiz starting with do. Start from learner's current level. resources: 1 real link or null.`
 
   const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
-  const result = streamText({
-    model: anthropic('claude-sonnet-4-6'),
-    system: 'You are a curriculum designer. Return ONLY valid JSON — no markdown fences, no explanation.',
+  const { text: raw } = await generateText({
+    model: anthropic('claude-sonnet-4-5'),
+    system: 'Return ONLY valid JSON array. No markdown, no explanation.',
     messages: [{ role: 'user', content: userPrompt }],
-    maxOutputTokens: 8000,
+    maxOutputTokens: 3500,
   })
-
-  const raw = await result.text
 
   const arrayStart = raw.indexOf('[')
   const arrayEnd = raw.lastIndexOf(']')

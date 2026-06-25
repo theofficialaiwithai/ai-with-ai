@@ -297,7 +297,10 @@ export default function DashboardClient({ profile, sessions }: Props) {
   const [showModal, setShowModal] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
 
-  const isGated = profile.freeSessionUsed && profile.subscriptionStatus === 'free'
+  // Show banner for all free-plan users who have at least one session.
+  // freeSessionUsed flag may be false for legacy sessions created before the fix.
+  const isFree = profile.subscriptionStatus === 'free'
+  const isGated = isFree && (profile.freeSessionUsed || sessions.length > 0)
   const activeSessions = sessions.filter(s => ACTIVE_STATUSES.has(s.status))
   const completedSessions = sessions.filter(s => s.status === 'completed' || s.status === 'abandoned')
   const hasAnySessions = sessions.length > 0

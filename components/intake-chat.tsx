@@ -163,12 +163,25 @@ export default function IntakeChat({ session, initialMessages }: Props) {
     ta.style.height = Math.min(ta.scrollHeight, 120) + 'px'
   }
 
+  const isLearnMode = session.mode === 'learn'
+
   async function handleGeneratePlan() {
     setGeneratingPlan(true)
-    // generate-plan now uses generateText (not streamText), so it blocks until
-    // Claude finishes and the DB write completes before returning JSON.
-    // The plan page handles generation itself; we just navigate there.
-    router.push(`/sessions/${session.id}/plan`)
+    if (isLearnMode) {
+      try {
+        const res = await fetch(`/api/sessions/${session.id}/generate-lessons`, { method: 'POST' })
+        const data = await res.json()
+        if (data.redirectTo) {
+          router.push(data.redirectTo)
+        } else {
+          setGeneratingPlan(false)
+        }
+      } catch {
+        setGeneratingPlan(false)
+      }
+    } else {
+      router.push(`/sessions/${session.id}/plan`)
+    }
   }
 
   /* ── render ── */
@@ -323,7 +336,9 @@ export default function IntakeChat({ session, initialMessages }: Props) {
                 ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
               }}
             >
-              {generatingPlan ? 'Generating…' : 'Generate My Plan →'}
+              {generatingPlan
+                ? (isLearnMode ? 'Generating lesson plan…' : 'Generating…')
+                : (isLearnMode ? 'Generate My Lesson Plan →' : 'Generate My Plan →')}
             </button>
           )}
         </div>

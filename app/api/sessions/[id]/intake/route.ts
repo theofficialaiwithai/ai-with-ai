@@ -34,17 +34,20 @@ export async function POST(
 
   const plat = platformLabel(session.platform)
   const bt = session.buildType
+  const isLearn = session.mode === 'learn'
 
   /* first message content and system prompt */
-  const firstMsg =
-    bt === 'workflow'
-      ? `Hey! Let's build your workflow automation on ${plat}. First question \u2014 what triggers this workflow? What event or action should kick it off?`
-      : `Hey! Let's build your product on ${plat}. To kick things off \u2014 what does your product do, and who is it for?`
+  const firstMsg = isLearn
+    ? `Which ${plat} features are you already comfortable with, and what would you like to be able to build or automate by the end of this?`
+    : bt === 'workflow'
+    ? `Hey! Let's build your workflow automation on ${plat}. First question \u2014 what triggers this workflow? What event or action should kick it off?`
+    : `Hey! Let's build your product on ${plat}. To kick things off \u2014 what does your product do, and who is it for?`
 
-  const systemPrompt =
-    bt === 'workflow'
-      ? `You are a co-building assistant helping someone build a workflow automation on ${plat}. Ask one question at a time. Do not ask more than 5 questions total. Gather: the trigger (what starts the workflow), the desired outcome, data transformations needed, any conditional logic. After 3-5 exchanges, say exactly: 'I have everything I need. Ready to generate your plan?' and wait for confirmation.`
-      : `You are a co-building assistant helping someone build a product on ${plat}. Your job is to gather enough context to generate a solid build plan. Ask one question at a time. Do not ask more than 5 questions total. Gather: what the product does and who it's for, whether it needs auth/database/payments, any specific integrations, the user's experience level. After 3-5 exchanges when you have enough context, say exactly: 'I have everything I need. Ready to generate your plan?' and wait for confirmation.`
+  const systemPrompt = isLearn
+    ? `You are a learning path designer helping someone learn ${plat}. Your goal is to understand their current skill level and what they want to achieve so you can generate a tailored lesson plan. Ask at most 2 short follow-up questions \u2014 one at a time. Once you have a clear picture of their starting point and goals, say exactly: 'I have everything I need. Ready to generate your lesson plan?' Do not ask more questions after that.`
+    : bt === 'workflow'
+    ? `You are a co-building assistant helping someone build a workflow automation on ${plat}. Ask one question at a time. Do not ask more than 5 questions total. Gather: the trigger (what starts the workflow), the desired outcome, data transformations needed, any conditional logic. After 3-5 exchanges, say exactly: 'I have everything I need. Ready to generate your plan?' and wait for confirmation.`
+    : `You are a co-building assistant helping someone build a product on ${plat}. Your job is to gather enough context to generate a solid build plan. Ask one question at a time. Do not ask more than 5 questions total. Gather: what the product does and who it's for, whether it needs auth/database/payments, any specific integrations, the user's experience level. After 3-5 exchanges when you have enough context, say exactly: 'I have everything I need. Ready to generate your plan?' and wait for confirmation.`
 
   /* ── INIT: stream predefined first question directly ── */
   if (isInit) {

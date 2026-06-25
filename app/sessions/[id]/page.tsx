@@ -30,7 +30,7 @@ export default async function SessionPage({
     content: m.content,
   }))
 
-  if (session.status === 'onboarding' && session.mode === 'build') {
+  if (session.status === 'onboarding') {
     return (
       <IntakeChat
         session={{
@@ -45,7 +45,11 @@ export default async function SessionPage({
     )
   }
 
-  /* placeholder for other modes/statuses */
+  if (session.status === 'learning') {
+    redirect(`/sessions/${session.id}/learn/${session.currentStep || 1}`)
+  }
+
+  /* placeholder for other statuses */
   return (
     <main
       style={{

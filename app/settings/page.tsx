@@ -3,14 +3,19 @@ import { redirect } from 'next/navigation'
 import { ensureProfile } from '@/lib/ensure-profile'
 import SettingsClient from '@/components/settings-client'
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string }>
+}) {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
   const profile = await ensureProfile()
   if (!profile) redirect('/sign-in')
 
-  // Pass only safe fields to the client — never send encrypted keys
+  const { success } = await searchParams
+
   return (
     <SettingsClient
       initialName={profile.name ?? ''}
@@ -18,6 +23,11 @@ export default async function SettingsPage() {
       preferredModel={profile.preferredModel}
       hasAnthropicKey={!!profile.anthropicApiKey}
       hasOpenAIKey={!!profile.openaiApiKey}
+      subscriptionStatus={profile.subscriptionStatus}
+      stripeCustomerId={profile.stripeCustomerId ?? null}
+      showSuccessBanner={success === 'true'}
+      proMonthlyPriceId={process.env.STRIPE_PRO_MONTHLY_PRICE_ID!}
+      lifetimePriceId={process.env.STRIPE_LIFETIME_PRICE_ID!}
     />
   )
 }

@@ -248,6 +248,152 @@ function ApiKeyCard({
   )
 }
 
+/* ── subscription status pill ── */
+const STATUS_STYLES: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  pro:       { label: 'Pro Active',      color: '#9D5AF0', bg: 'rgba(124,58,237,0.12)', border: 'rgba(124,58,237,0.3)' },
+  lifetime:  { label: 'Lifetime Access', color: '#F59E0B', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)' },
+  free:      { label: 'Free',            color: '#94A3B8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
+  cancelled: { label: 'Cancelled',       color: '#F87171', bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.25)' },
+  past_due:  { label: 'Payment Failed',  color: '#F87171', bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.25)' },
+}
+
+function StatusPill({ status }: { status: string }) {
+  const s = STATUS_STYLES[status] ?? STATUS_STYLES.free
+  return (
+    <span style={{
+      fontFamily: FM, fontSize: 11, fontWeight: 600, letterSpacing: '0.05em',
+      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+      borderRadius: 9999, padding: '3px 10px', display: 'inline-block',
+    }}>
+      {s.label}
+    </span>
+  )
+}
+
+/* ── billing section ── */
+function BillingSection({
+  subscriptionStatus, stripeCustomerId, proMonthlyPriceId, lifetimePriceId,
+}: {
+  subscriptionStatus: string
+  stripeCustomerId: string | null
+  proMonthlyPriceId: string
+  lifetimePriceId: string
+}) {
+  const [loading, setLoading] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+
+  async function handleCheckout(priceId: string, label: string) {
+    setLoading(label); setErr(null)
+    try {
+      const res = await fetch('/api/billing/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Checkout failed')
+      window.location.href = data.url
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Something went wrong')
+      setLoading(null)
+    }
+  }
+
+  async function handlePortal() {
+    setLoading('portal'); setErr(null)
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Portal error')
+      window.location.href = data.url
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Something went wrong')
+      setLoading(null)
+    }
+  }
+
+  const isPaid = subscriptionStatus === 'pro' || subscriptionStatus === 'lifetime'
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <span style={{ fontFamily: FD, fontSize: 14, color: '#94A3B8' }}>Current plan</span>
+        <StatusPill status={subscriptionStatus} />
+      </div>
+
+      {isPaid && stripeCustomerId && (
+        <ActionButton
+          onClick={handlePortal}
+          loading={loading === 'portal'}
+          label="Manage billing →"
+          loadingLabel="Opening portal…"
+          variant="ghost"
+        />
+      )}
+
+      {!isPaid && (
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {/* Pro Monthly */}
+          <div style={{
+            flex: 1, minWidth: 220,
+            background: '#0D0D1A', border: '1px solid rgba(124,58,237,0.25)',
+            borderRadius: 14, padding: '24px 22px',
+          }}>
+            <div style={{ fontFamily: FD, fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 4 }}>Pro</div>
+            <div style={{ fontFamily: FD, fontSize: 28, fontWeight: 700, color: '#F8FAFC', marginBottom: 16 }}>
+              $19<span style={{ fontSize: 14, fontWeight: 500, color: '#94A3B8' }}>/month</span>
+            </div>
+            <ul style={{ fontFamily: FB, fontSize: 13, color: '#94A3B8', paddingLeft: 0, listStyle: 'none', marginBottom: 20, lineHeight: 2 }}>
+              <li>✓ Unlimited sessions</li>
+              <li>✓ All 4 platforms</li>
+              <li>✓ Cancel anytime</li>
+            </ul>
+            <ActionButton
+              onClick={() => handleCheckout(proMonthlyPriceId, 'monthly')}
+              loading={loading === 'monthly'}
+              label="Start Pro"
+              loadingLabel="Opening checkout…"
+            />
+          </div>
+
+          {/* Lifetime */}
+          <div style={{
+            flex: 1, minWidth: 220,
+            background: '#0D0D1A', border: '1px solid rgba(245,158,11,0.3)',
+            borderRadius: 14, padding: '24px 22px',
+          }}>
+            <div style={{ fontFamily: FD, fontSize: 13, fontWeight: 600, color: '#F59E0B', marginBottom: 4 }}>Lifetime</div>
+            <div style={{ fontFamily: FD, fontSize: 28, fontWeight: 700, color: '#F8FAFC', marginBottom: 16 }}>
+              $149<span style={{ fontSize: 14, fontWeight: 500, color: '#94A3B8' }}> once</span>
+            </div>
+            <ul style={{ fontFamily: FB, fontSize: 13, color: '#94A3B8', paddingLeft: 0, listStyle: 'none', marginBottom: 20, lineHeight: 2 }}>
+              <li>✓ Everything in Pro</li>
+              <li>✓ Pay once, keep forever</li>
+              <li>✓ All future updates</li>
+            </ul>
+            <button
+              onClick={() => handleCheckout(lifetimePriceId, 'lifetime')}
+              disabled={!!loading}
+              style={{
+                background: 'none', color: '#F59E0B',
+                border: '1px solid rgba(245,158,11,0.5)',
+                borderRadius: 8, padding: '10px 20px',
+                fontFamily: FD, fontWeight: 600, fontSize: 14,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading === 'lifetime' ? 'Opening checkout…' : 'Get Lifetime Access'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {err && <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginTop: 12 }}>✗ {err}</p>}
+    </div>
+  )
+}
+
 /* ══════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════ */
@@ -257,9 +403,18 @@ interface Props {
   preferredModel: string
   hasAnthropicKey: boolean
   hasOpenAIKey: boolean
+  subscriptionStatus: string
+  stripeCustomerId: string | null
+  showSuccessBanner: boolean
+  proMonthlyPriceId: string
+  lifetimePriceId: string
 }
 
-export default function SettingsClient({ initialName, email, preferredModel, hasAnthropicKey, hasOpenAIKey }: Props) {
+export default function SettingsClient({
+  initialName, email, preferredModel, hasAnthropicKey, hasOpenAIKey,
+  subscriptionStatus, stripeCustomerId, showSuccessBanner,
+  proMonthlyPriceId, lifetimePriceId,
+}: Props) {
   const router = useRouter()
 
   /* profile */
@@ -336,7 +491,28 @@ export default function SettingsClient({ initialName, email, preferredModel, has
           <div style={{ width: 80 }} />
         </nav>
 
+        {/* success banner */}
+        {showSuccessBanner && (
+          <div style={{
+            background: 'rgba(16,185,129,0.1)', borderBottom: '1px solid rgba(16,185,129,0.25)',
+            padding: '12px 28px',
+            fontFamily: FB, fontSize: 13, color: '#10B981', textAlign: 'center',
+          }}>
+            ✓ Payment successful — your plan has been upgraded!
+          </div>
+        )}
+
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px 80px' }}>
+
+          {/* ── Section 0: Billing ── */}
+          <Card title="Billing" subtitle="Manage your subscription and payment method.">
+            <BillingSection
+              subscriptionStatus={subscriptionStatus}
+              stripeCustomerId={stripeCustomerId}
+              proMonthlyPriceId={proMonthlyPriceId}
+              lifetimePriceId={lifetimePriceId}
+            />
+          </Card>
 
           {/* ── Section 1: Profile ── */}
           <Card title="Profile" subtitle="Your display name shown in your build sessions.">

@@ -1,49 +1,51 @@
-import { ensureProfile } from '@/lib/ensure-profile'
-import { UserButton } from '@clerk/nextjs'
+import { auth, currentUser } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import { db } from '@/db'
+import { profiles, sessions } from '@/db/schema'
+import { eq, desc } from 'drizzle-orm'
+import DashboardClient from '@/components/dashboard-client'
 
 export default async function DashboardPage() {
-  const profile = await ensureProfile()
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
+
+  const [user, profile] = await Promise.all([
+    currentUser(),
+    db.query.profiles.findFirst({ where: eq(profiles.id, userId) }),
+  ])
+
+  if (!profile) redirect('/sign-in')
+
+  const allSessions = await db.query.sessions.findMany({
+    where: eq(sessions.userId, userId),
+    orderBy: [desc(sessions.lastActiveAt)],
+  })
+
+  const displayName =
+    profile.name ||
+    (user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() : '') ||
+    profile.email
 
   return (
-    <main className="min-h-screen" style={{ color: '#F8FAFC' }}>
-      <nav
-        className="flex items-center justify-between px-6 py-4"
-        style={{
-          background: 'var(--nav-bg)',
-          borderBottom: '1px solid var(--border-subtle)',
-          backdropFilter: 'blur(12px)',
-        }}
-      >
-        <span
-          style={{
-            fontFamily: 'var(--font-space-grotesk), sans-serif',
-            fontWeight: 700,
-            fontSize: '1.125rem',
-            color: 'var(--violet)',
-          }}
-        >
-          AI with AI
-        </span>
-        <UserButton />
-      </nav>
-
-      <div className="flex flex-col items-center justify-center" style={{ minHeight: 'calc(100vh - 64px)' }}>
-        <h1
-          style={{
-            fontFamily: 'var(--font-space-grotesk), sans-serif',
-            fontSize: '2rem',
-            fontWeight: 700,
-            marginBottom: '0.5rem',
-          }}
-        >
-          Dashboard
-        </h1>
-        {profile && (
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            {profile.email} · {profile.subscriptionStatus}
-          </p>
-        )}
-      </div>
-    </main>
+    <DashboardClient
+      profile={{
+        name: displayName,
+        email: profile.email,
+        freeSessionUsed: profile.freeSessionUsed,
+        subscriptionStatus: profile.subscriptionStatus,
+      }}
+      sessions={allSessions.map(s => ({
+        id: s.id,
+        mode: s.mode,
+        platform: s.platform,
+        buildType: s.buildType,
+        title: s.title,
+        status: s.status,
+        currentStep: s.currentStep,
+        totalSteps: s.totalSteps,
+        lastActiveAt: s.lastActiveAt.toISOString(),
+        completedAt: s.completedAt?.toISOString() ?? null,
+      }))}
+    />
   )
 }

@@ -113,6 +113,9 @@ const AUTOMATION_CONTROLS = [
 ]
 
 async function seed() {
+  console.log('Clearing existing checkpoints...')
+  await db.delete(schema.levelCheckpoints)
+
   console.log('Seeding levels...')
 
   for (const level of LEVELS) {
@@ -130,7 +133,7 @@ async function seed() {
 
     console.log(`  ✓ Level ${level.levelNumber}: ${level.name.slice(0, 50)}…`)
 
-    // Insert checkpoints (skip if already exist for this level)
+    // Insert checkpoints fresh (table was cleared above)
     for (let i = 0; i < level.checkpoints.length; i++) {
       await db.insert(schema.levelCheckpoints)
         .values({
@@ -138,7 +141,6 @@ async function seed() {
           checkpointText: level.checkpoints[i],
           sortOrder: i + 1,
         })
-        .onConflictDoNothing()
     }
   }
 

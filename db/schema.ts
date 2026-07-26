@@ -6,7 +6,11 @@ import {
   boolean,
   uuid,
   jsonb,
+  serial,
+  check,
+  unique,
 } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
 
 export const profiles = pgTable('profiles', {
   id: text('id').primaryKey(),
@@ -102,3 +106,118 @@ export const learnLessons = pgTable('learn_lessons', {
   quizScore: integer('quiz_score'),
   completedAt: timestamp('completed_at'),
 })
+
+// ── Build Projects (AI-with-AI builder flow) ──────────────────────────────
+
+export const buildProjects = pgTable('build_projects', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  title: text('title').notNull(),
+  path: text('path').notNull(),
+  buildTool: text('build_tool').notNull().default('claude_code'),
+  status: text('status').notNull().default('discovery'),
+  prdMarkdown: text('prd_markdown'),
+  domainRiskFlagged: boolean('domain_risk_flagged').notNull().default(false),
+  domainRiskAcknowledged: boolean('domain_risk_acknowledged').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  check('build_projects_path_check', sql`${table.path} IN ('from_scratch','agentify_existing')`),
+])
+
+// SQL name 'project_steps' — 'build_steps' is already taken by the session-based table above
+export const projectSteps = pgTable('project_steps', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id')
+    .references(() => buildProjects.id)
+    .notNull(),
+  stepNumber: integer('step_number').notNull(),
+  stepName: text('step_name').notNull(),
+  promptText: text('prompt_text').notNull(),
+  verifyChecklist: jsonb('verify_checklist').notNull(),
+  isComplete: boolean('is_complete').default(false),
+  completedAt: timestamp('completed_at'),
+})
+
+export const agenticAudits = pgTable('agentic_audits', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id')
+    .references(() => buildProjects.id)
+    .notNull(),
+  dimension: text('dimension').notNull(),
+  status: text('status').notNull(),
+  notes: text('notes'),
+}, (table) => [
+  check('agentic_audits_dimension_check', sql`${table.dimension} IN ('event_response','scheduled_automation','external_connectivity','ai_reasoning','notification_alerting')`),
+  check('agentic_audits_status_check', sql`${table.status} IN ('covered','partial','missing')`),
+])
+
+// ── Levels + Checkpoints ──────────────────────────────────────────────────
+
+export const levels = pgTable('levels', {
+  levelNumber: integer('level_number').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description').notNull(),
+})
+
+export const levelCheckpoints = pgTable('level_checkpoints', {
+  id: serial('id').primaryKey(),
+  levelNumber: integer('level_number')
+    .references(() => levels.levelNumber)
+    .notNull(),
+  checkpointText: text('checkpoint_text').notNull(),
+  sortOrder: integer('sort_order').notNull(),
+})
+
+export const userCheckpointProgress = pgTable('user_checkpoint_progress', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').notNull(),
+  checkpointId: integer('checkpoint_id')
+    .references(() => levelCheckpoints.id)
+    .notNull(),
+  completedAt: timestamp('completed_at').defaultNow(),
+}, (table) => [
+  unique('user_checkpoint_unique').on(table.userId, table.checkpointId),
+])
+
+// ── Generation Logs ───────────────────────────────────────────────────────
+
+export const generationLogs = pgTable('generation_logs', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id')
+    .references(() => buildProjects.id)
+    .notNull(),
+  generationType: text('generation_type').notNull(),
+  inputPayload: jsonb('input_payload').notNull(),
+  outputText: text('output_text').notNull(),
+  domainRiskFlagged: boolean('domain_risk_flagged').notNull().default(false),
+  domainRiskCategories: text('domain_risk_categories').array(),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  check('generation_logs_type_check', sql`${table.generationType} IN ('prd','audit')`),
+])
+
+// ── Automation Controls ───────────────────────────────────────────────────
+
+export const automationControls = pgTable('automation_controls', {
+  automationName: text('automation_name').primaryKey(),
+  paused: boolean('paused').notNull().default(false),
+  pausedAt: timestamp('paused_at'),
+  pausedBy: text('paused_by'),
+})
+
+// ── Subscriptions ─────────────────────────────────────────────────────────
+
+export const subscriptions = pgTable('subscriptions', {
+  id: serial('id').primaryKey(),
+  userId: text('user_id').notNull().unique(),
+  stripeCustomerId: text('stripe_customer_id').notNull(),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  status: text('status').notNull().default('inactive'),
+  priceId: text('price_id'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  check('subscriptions_status_check', sql`${table.status} IN ('inactive','active','past_due','canceled')`),
+])

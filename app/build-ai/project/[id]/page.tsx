@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { db } from '@/db'
 import { buildProjects } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { checkDomainRisk } from '@/lib/domain-risk'
 import ProjectPrdClient from '@/components/project-prd-client'
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,17 +21,23 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   if (!project) notFound()
 
+  const { categories: riskCategories } = project.domainRiskFlagged
+    ? checkDomainRisk(project.prdMarkdown ?? '')
+    : { categories: [] as string[] }
+
   return (
     <ProjectPrdClient
       project={{
         id: project.id,
         title: project.title,
+        path: project.path,
         buildTool: project.buildTool,
         status: project.status,
         prdMarkdown: project.prdMarkdown ?? '',
         domainRiskFlagged: project.domainRiskFlagged,
         domainRiskAcknowledged: project.domainRiskAcknowledged,
         existingAppUrl: project.existingAppUrl ?? null,
+        riskCategories,
         createdAt: project.createdAt?.toISOString() ?? '',
       }}
     />

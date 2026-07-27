@@ -12,14 +12,14 @@ import { eq, and } from 'drizzle-orm'
 const BuildStepsSchema = z.object({
   steps: z.array(z.object({
     stepNumber: z.number().int(),
-    stepName: z.string().describe('Short name for this build step (5-10 words)'),
+    stepName: z.string().describe('Short name for this build step (5-8 words)'),
     promptText: z.string().describe(
-      'Complete, self-contained Claude Code prompt for this step. Must include all context from the PRD needed to execute the step (app name, tech stack, relevant features). Never references previous steps or assumes prior context. Written as a direct instruction to Claude Code.'
+      'Claude Code prompt for this step — 3 to 5 sentences MAXIMUM. Name exact file paths to create or edit, specific functions or routes to implement, and any libraries to install. Self-contained (no references to other steps) but BRIEF.'
     ),
-    verifyChecklist: z.array(z.string()).min(2).max(6).describe(
-      'Specific, testable checklist items that confirm this step is complete'
+    verifyChecklist: z.array(z.string()).min(2).max(3).describe(
+      '2-3 quick checks that confirm this step is complete'
     ),
-  })).min(1).max(15),
+  })).min(3).max(8),
 })
 
 export async function POST(
@@ -63,23 +63,18 @@ export async function POST(
 
     const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
-    const prompt = `You are a senior software engineer and build coach. You have been given a Product Requirements Document (PRD) for an app that a developer will build with Claude Code.
+    const prompt = `You are a build coach. Expand the MVP Build Order from this PRD into concise Claude Code prompts.
 
-The PRD contains an "MVP Build Order" section that lists the build steps as brief one-liners. Your job is to expand EACH of those steps into a full, self-contained, pasteable Claude Code prompt.
+RULES:
+- Maximum 8 steps total
+- Each promptText: 3-5 sentences MAXIMUM — specific but brief
+- Name exact file paths, routes, and libraries; never say "as before" or reference other steps
+- 2-3 verify items per step only
 
-## Critical rules for every step prompt:
-1. **Fully self-contained** — Each prompt must work even if Claude Code has never seen any prior steps. Include all context from the PRD that Claude Code needs: app name, tech stack, database schema (if relevant), API routes, styling conventions.
-2. **Never reference prior steps** — Do not say "continuing from the previous step", "as we built before", or assume any files exist.
-3. **Specific and actionable** — Name the exact files, functions, and behaviors expected. Not "add auth" but "Create a Clerk middleware at middleware.ts that protects /dashboard and /api/... routes".
-4. **Follow the step numbering exactly** — Use the same step numbers and sequence as the PRD's MVP Build Order section.
-
-## PRD to expand:
-
+PRD:
 ---
 ${prdMarkdown}
----
-
-Expand the MVP Build Order into full step prompts. For each step, also provide a specific verification checklist (what the developer should check/test to confirm the step worked).`
+---`
 
     let result: z.infer<typeof BuildStepsSchema>
     try {
@@ -87,7 +82,7 @@ Expand the MVP Build Order into full step prompts. For each step, also provide a
         model: anthropic('claude-haiku-4-5-20251001'),
         schema: BuildStepsSchema,
         prompt,
-        maxOutputTokens: 3000,
+        maxOutputTokens: 2000,
       })
       result = object
     } catch (err) {

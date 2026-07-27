@@ -133,15 +133,21 @@ export default function NewProjectPage() {
   const router = useRouter()
   const [pathChoice, setPathChoice] = useState<PathChoice>(null)
 
+  // from_scratch fields
   const [idea, setIdea] = useState('')
   const [targetUser, setTargetUser] = useState('')
   const [coreFeature, setCoreFeature] = useState('')
   const [buildTool, setBuildTool] = useState('claude_code')
 
+  // enhance fields
+  const [appDescription, setAppDescription] = useState('')
+  const [stackDescription, setStackDescription] = useState('')
+  const [manualTasksDescription, setManualTasksDescription] = useState('')
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handlePrdSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!idea.trim() || !targetUser.trim() || !coreFeature.trim()) {
       setError('Please fill in all fields.')
@@ -153,12 +159,7 @@ export default function NewProjectPage() {
       const res = await fetch('/api/build-ai/generate-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ideaDescription: idea,
-          targetUser,
-          coreFeature,
-          buildTool,
-        }),
+        body: JSON.stringify({ ideaDescription: idea, targetUser, coreFeature, buildTool }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Generation failed')
@@ -166,9 +167,31 @@ export default function NewProjectPage() {
       router.push(`/build-ai/project/${data.projectId}`)
     } catch (err) {
       console.error('[new-project] client error:', err)
-      console.error('[new-project] error stack:', err instanceof Error ? err.stack : '(no stack)')
-      console.error('[new-project] error name:', err instanceof Error ? err.name : typeof err)
-      console.error('[new-project] error message:', err instanceof Error ? err.message : String(err))
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+      setLoading(false)
+    }
+  }
+
+  async function handleAuditSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!appDescription.trim() || !stackDescription.trim() || !manualTasksDescription.trim()) {
+      setError('Please fill in all fields.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/build-ai/generate-audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appDescription, stackDescription, manualTasksDescription }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Audit failed')
+      if (!data.projectId) throw new Error('Audit created but no ID returned')
+      router.push(`/build-ai/project/${data.projectId}`)
+    } catch (err) {
+      console.error('[new-project] audit error:', err)
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setLoading(false)
     }
@@ -208,7 +231,7 @@ export default function NewProjectPage() {
           New Project
         </h1>
         <p style={{ fontFamily: FB, fontSize: 14, color: '#94A3B8', marginBottom: 40, lineHeight: 1.6 }}>
-          Tell us what you&apos;re building and we&apos;ll generate a full PRD with a step-by-step build plan.
+          Build from scratch with a full PRD, or audit an existing app for agentic improvements.
         </p>
 
         {/* Path choice */}
@@ -218,42 +241,25 @@ export default function NewProjectPage() {
             title="Build From Scratch"
             description="Start with a blank slate. Describe your idea and get a complete PRD and build plan."
             selected={pathChoice === 'from_scratch'}
-            onClick={() => setPathChoice('from_scratch')}
+            onClick={() => { setPathChoice('from_scratch'); setError(null) }}
           />
           <OptionCard
             icon="⚡"
             title="Enhance My Existing Build"
-            description="Add agentic capabilities to something you've already started."
+            description="Run an agentic audit on something you've already started. Get a ranked list of enhancements."
             selected={pathChoice === 'enhance'}
-            onClick={() => setPathChoice('enhance')}
+            onClick={() => { setPathChoice('enhance'); setError(null) }}
           />
         </div>
 
-        {/* Enhance placeholder */}
-        {pathChoice === 'enhance' && (
-          <div style={{
-            background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 14, padding: '28px 24px', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 28, marginBottom: 12 }}>🚧</div>
-            <div style={{ fontFamily: FD, fontSize: 16, fontWeight: 600, color: '#F8FAFC', marginBottom: 8 }}>
-              Coming in the next step
-            </div>
-            <div style={{ fontFamily: FB, fontSize: 13, color: '#94A3B8' }}>
-              The &quot;Enhance Existing Build&quot; flow is being built next.
-            </div>
-          </div>
-        )}
-
-        {/* Discovery form */}
+        {/* From scratch form */}
         {pathChoice === 'from_scratch' && (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handlePrdSubmit}>
             <div style={{
               background: SURFACE, border: `1px solid ${BORDER}`,
               borderRadius: 16, padding: '32px 28px',
               display: 'flex', flexDirection: 'column', gap: 24,
             }}>
-
               <div>
                 <Label>What do you want to build?</Label>
                 <TextArea
@@ -263,7 +269,6 @@ export default function NewProjectPage() {
                   rows={4}
                 />
               </div>
-
               <div>
                 <Label>Who is it for?</Label>
                 <TextInput
@@ -272,7 +277,6 @@ export default function NewProjectPage() {
                   placeholder="e.g. Solo developers managing multiple open-source projects"
                 />
               </div>
-
               <div>
                 <Label>What&apos;s the one core feature it needs to work?</Label>
                 <TextInput
@@ -281,16 +285,13 @@ export default function NewProjectPage() {
                   placeholder="e.g. Detecting PRs with no activity in 7+ days and surfacing them in a digest"
                 />
               </div>
-
               <div>
                 <Label>Which build tool will you use?</Label>
                 <Select value={buildTool} onChange={setBuildTool} options={BUILD_TOOLS} />
               </div>
-
               {error && (
                 <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', margin: 0 }}>✗ {error}</p>
               )}
-
               <button
                 type="submit"
                 disabled={loading}
@@ -305,6 +306,62 @@ export default function NewProjectPage() {
                 }}
               >
                 {loading ? '✦ Writing your PRD…' : 'Generate PRD →'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Enhance form */}
+        {pathChoice === 'enhance' && (
+          <form onSubmit={handleAuditSubmit}>
+            <div style={{
+              background: SURFACE, border: `1px solid ${BORDER}`,
+              borderRadius: 16, padding: '32px 28px',
+              display: 'flex', flexDirection: 'column', gap: 24,
+            }}>
+              <div>
+                <Label>Describe your app — what does it do and who uses it?</Label>
+                <TextArea
+                  value={appDescription}
+                  onChange={setAppDescription}
+                  placeholder="e.g. A Next.js dashboard that lets marketing teams schedule and publish social posts across Twitter, LinkedIn, and Instagram. Used by a 5-person agency managing 12 client accounts."
+                  rows={4}
+                />
+              </div>
+              <div>
+                <Label>What&apos;s your current tech stack?</Label>
+                <TextInput
+                  value={stackDescription}
+                  onChange={setStackDescription}
+                  placeholder="e.g. Next.js 14, Supabase, Clerk auth, deployed on Vercel"
+                />
+              </div>
+              <div>
+                <Label>What feels manual today — things you or your users do by hand that feel repetitive?</Label>
+                <TextArea
+                  value={manualTasksDescription}
+                  onChange={setManualTasksDescription}
+                  placeholder="e.g. Every Monday we export a CSV of last week's posts and manually paste metrics into a Google Sheet. Clients email us for status updates instead of seeing a live dashboard."
+                  rows={4}
+                />
+              </div>
+              {error && (
+                <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', margin: 0 }}>✗ {error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  background: loading ? 'rgba(124,58,237,0.5)' : VIOLET,
+                  color: '#fff', border: 'none', borderRadius: 10,
+                  padding: '13px 0', width: '100%',
+                  fontFamily: FD, fontWeight: 700, fontSize: 15,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.15s',
+                  boxShadow: loading ? 'none' : '0 4px 20px rgba(124,58,237,0.35)',
+                }}
+              >
+                {loading ? '✦ Running the audit…' : 'Run Agentic Audit →'}
               </button>
             </div>
           </form>

@@ -150,7 +150,7 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
         try { const d = await res.json(); msg = d.error ?? msg } catch {}
         throw new Error(msg)
       }
-      router.push(`/build-ai/project/${project.id}/coach`)
+      router.push(`/build-ai/project/${project.id}/build-map`)
     } catch (err) {
       setBuildError(err instanceof Error ? err.message : 'Something went wrong')
       setBuilding(false)

@@ -6,6 +6,7 @@ import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { db } from '@/db'
 import { buildProjects, generationLogs } from '@/db/schema'
+import { eq, sql } from 'drizzle-orm'
 import { checkDomainRisk } from '@/lib/domain-risk'
 
 function deriveTitle(ideaDescription: string): string {
@@ -37,6 +38,14 @@ export async function POST(req: Request) {
     }
     const toolLabel = buildToolLabel[buildTool] ?? buildTool
 
+    // Count existing projects to determine intro blurb length
+    const [{ n: projectCount }] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(buildProjects)
+      .where(eq(buildProjects.userId, userId))
+    const isFirstProject = projectCount === 0
+    console.log('[generate-prd] project count:', projectCount, 'isFirstProject:', isFirstProject)
+
     const prompt = `You are a senior product strategist helping an indie builder create a focused, actionable PRD.
 
 The builder wants to build the following:
@@ -45,38 +54,64 @@ The builder wants to build the following:
 - Core feature: ${coreFeature}
 - Build tool: ${toolLabel}
 
-Generate a complete PRD in Markdown with these exact sections:
+Generate a complete PRD in Markdown. Include ALL 13 sections below in EXACTLY this order. Do not skip any section.
 
 ## Overview
-One paragraph description of the product. Then three punchy taglines (bullet list).
+One paragraph describing the product. Then three punchy taglines as a bullet list.
 
 ## Problem
-What problem does this solve? Be specific. One short paragraph.
+One specific paragraph: what pain does this solve and why current alternatives fall short.
 
 ## Target Users
 - **Primary:** [who this is built for]
 - **Secondary:** [who might also benefit]
-- **Not the target:** [who this is not for — important for scope]
+- **Not the target:** [who this is explicitly not for — important for scope]
 
 ## Core Value Proposition
-One crisp sentence: "[Product] helps [user] do [outcome] without [friction]."
+One sentence: "[Product] helps [user] do [outcome] without [friction]."
 
 ## MVP Features
-List 5–7 features. Each feature: bold name, one-sentence description. These are recommendations — state them as "recommended: X — confirm before building."
+5–7 features. Each on its own line: **Feature Name** — recommended: [one-sentence description] — confirm before building.
 
 ## Out of Scope (v1)
 Bullet list of things explicitly NOT included in v1. Be ruthless.
 
+## Brand & Design Direction
+**Colors:** Specific hex values for Background, Surface, Primary, Text, Error.
+**Typography:** Recommended heading font and body font (name the actual fonts).
+**Visual Principles:** 2–3 one-sentence principles that define the look and feel.
+
 ## Tech Stack
-A markdown table with columns: Layer | Recommended Choice | Notes. Cover: frontend, backend/API, database, auth, hosting, any key third-party services. Each choice should be phrased as "recommended: X — confirm before building." Tailor choices to ${toolLabel} conventions.
+Markdown table with columns: Layer | Recommended Choice | Notes.
+Rows: Frontend, Backend/API, Database, Auth, Hosting, and any key third-party services.
+Phrase each choice as "recommended: X — confirm before building." Tailor to ${toolLabel}.
 
-## Build Order
-Numbered list of 6–8 build steps. Each step is one line: **Step N: [Step Name]** — [one sentence describing what it builds and what files it creates or modifies].
+## Data Schema
+Write the actual SQL CREATE TABLE statements for every core table this app needs.
+Use standard PostgreSQL syntax. Include primary keys, foreign keys, and important constraints.
+If no persistent data is needed, write exactly: "No persistent storage required — standard session state only."
 
-Important rules for this PRD:
-1. Tech stack choices and MVP feature scope → phrase as recommendations ("recommended: X — confirm before building")
-2. File/folder structure, CRUD patterns, build step sequence → state as fact, no hedging
-3. Keep the PRD tight. No filler. A builder should be able to start within 10 minutes of reading this.`
+## App Routes
+Markdown table with columns: Route | Method | Description.
+List every page route (GET) and API endpoint (POST/PATCH/DELETE) the MVP needs.
+
+## Core Algorithm / Logic
+Write the central non-trivial logic in pseudocode. Focus on the business logic that makes this app work, not boilerplate.
+If the app is pure CRUD with no non-trivial logic, write exactly: "No core algorithm required — standard CRUD."
+
+## MVP Build Order
+A numbered list of 8–12 steps. Each step is ONE LINE: **Step N: [Name]** — [one sentence describing what it builds].
+No sub-bullets, no prompts, no extra detail. Overview only.
+
+## Success Metrics
+Markdown table with columns: Metric | Target | How to Measure.
+5–7 metrics that define whether the MVP is working.
+
+Rules:
+1. Tech stack, third-party services, MVP features → phrase as recommendations ("recommended: X — confirm before building")
+2. SQL schemas, file structure, CRUD patterns, build step order → state as fact
+3. Every section must be present. Do not skip any.
+4. Be concise but complete. No filler.`
 
     const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -86,7 +121,7 @@ Important rules for this PRD:
       const result = await generateText({
         model: anthropic('claude-haiku-4-5-20251001'),
         messages: [{ role: 'user', content: prompt }],
-        maxOutputTokens: 1500,
+        maxOutputTokens: 2500,
       })
       prdText = result.text
       console.log('[generate-prd] generateText succeeded, prdText length:', prdText.length)
@@ -102,9 +137,23 @@ Important rules for this PRD:
     const { flagged, categories } = checkDomainRisk(prdText)
     console.log('[generate-prd] domain risk result:', { flagged, categories })
 
-    const storedPrd = flagged
-      ? `> ⚠️ **Domain risk detected** — this PRD touches sensitive categories: **${categories.join(', ')}**. Review carefully before building. Some features may require legal, compliance, or security review.\n\n${prdText}`
-      : prdText
+    const introBanner = isFirstProject
+      ? `> **What is this PRD?** A Product Requirements Document is the blueprint for your app — it defines what you're building, who it's for, the data it stores, and the order to build it in. Think of it as the brief you hand to ${toolLabel} before writing a single line of code.
+>
+> **How to use it with ${toolLabel}:** Open a new ${toolLabel} session and start with the Data Schema section — paste the SQL and ask ${toolLabel} to set up your database first. Then work through the MVP Build Order one step at a time. Each step is designed to be a single focused session. The Tech Stack and App Routes sections give ${toolLabel} the context it needs to make consistent decisions throughout your build.
+>
+> **Before you start:** Scan the Tech Stack and MVP Features sections and confirm any "recommended: X" choices that carry cost or lock-in (database provider, auth service, hosting). Once you've confirmed those, everything else can be taken as-is.
+
+`
+      : `> You've built before — jump straight to the Data Schema and MVP Build Order and paste Step 1 into ${toolLabel} to get started.
+
+`
+
+    const domainRiskBanner = flagged
+      ? `> ⚠️ **Domain risk detected** — this PRD touches sensitive categories: **${categories.join(', ')}**. Review carefully before building. Some features may require legal, compliance, or security review.\n\n`
+      : ''
+
+    const storedPrd = introBanner + domainRiskBanner + prdText
 
     const title = deriveTitle(ideaDescription)
     console.log('[generate-prd] derived title:', title)

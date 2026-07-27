@@ -48,13 +48,52 @@ function formatDate(iso: string) {
 export default function ProjectPrdClient({ project }: { project: Project }) {
   const router = useRouter()
   const [copied, setCopied] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [draftPrd, setDraftPrd] = useState(project.prdMarkdown)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const statusStyle = STATUS_COLORS[project.status] ?? STATUS_COLORS.discovery
 
   async function handleCopy() {
-    await navigator.clipboard.writeText(project.prdMarkdown)
+    await navigator.clipboard.writeText(editMode ? draftPrd : project.prdMarkdown)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function handleEdit() {
+    setDraftPrd(project.prdMarkdown)
+    setSaveError(null)
+    setEditMode(true)
+  }
+
+  function handleCancel() {
+    setDraftPrd(project.prdMarkdown)
+    setSaveError(null)
+    setEditMode(false)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const res = await fetch(`/api/build-ai/project/${project.id}/update-prd`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prdMarkdown: draftPrd }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Save failed')
+      }
+      // Reload the page so the server component re-fetches the updated PRD
+      router.refresh()
+      setEditMode(false)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -121,111 +160,181 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
           </div>
         </div>
 
-        {/* Copy button */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
-          <button
-            onClick={handleCopy}
-            style={{
-              background: copied ? 'rgba(16,185,129,0.15)' : SURFACE,
-              border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : BORDER}`,
-              color: copied ? '#6EE7B7' : '#94A3B8',
-              fontFamily: FM, fontSize: 11, fontWeight: 600,
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {copied ? '✓ Copied' : 'Copy PRD'}
-          </button>
+        {/* Toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 20 }}>
+          {!editMode ? (
+            <>
+              <button
+                onClick={handleCopy}
+                style={{
+                  background: copied ? 'rgba(16,185,129,0.15)' : SURFACE,
+                  border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : BORDER}`,
+                  color: copied ? '#6EE7B7' : '#94A3B8',
+                  fontFamily: FM, fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {copied ? '✓ Copied' : 'Copy PRD'}
+              </button>
+              <button
+                onClick={handleEdit}
+                style={{
+                  background: SURFACE, border: `1px solid ${BORDER}`,
+                  color: '#94A3B8', fontFamily: FM, fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; e.currentTarget.style.color = '#F8FAFC' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#94A3B8' }}
+              >
+                Edit PRD
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancel}
+                disabled={saving}
+                style={{
+                  background: SURFACE, border: `1px solid ${BORDER}`,
+                  color: '#94A3B8', fontFamily: FM, fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '7px 14px', borderRadius: 8,
+                  cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                style={{
+                  background: saving ? 'rgba(124,58,237,0.5)' : VIOLET,
+                  border: 'none', color: '#fff',
+                  fontFamily: FM, fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '7px 18px', borderRadius: 8,
+                  cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                }}
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </>
+          )}
         </div>
 
-        {/* PRD content */}
-        <div style={{
-          background: SURFACE, border: `1px solid ${BORDER}`,
-          borderRadius: 16, padding: '36px 40px',
-        }}>
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            components={{
-              h1: ({ children }) => (
-                <h1 style={{ fontFamily: FS, fontSize: 22, fontWeight: 700, color: '#F8FAFC', marginTop: 0, marginBottom: 16, paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>{children}</h1>
-              ),
-              h2: ({ children }) => (
-                <h2 style={{ fontFamily: FS, fontSize: 17, fontWeight: 700, color: '#F8FAFC', marginTop: 32, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${BORDER}` }}>{children}</h2>
-              ),
-              h3: ({ children }) => (
-                <h3 style={{ fontFamily: FD, fontSize: 14, fontWeight: 700, color: '#E2E8F0', marginTop: 20, marginBottom: 8 }}>{children}</h3>
-              ),
-              p: ({ children }) => (
-                <p style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, marginTop: 0 }}>{children}</p>
-              ),
-              ul: ({ children }) => (
-                <ul style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, paddingLeft: 20 }}>{children}</ul>
-              ),
-              ol: ({ children }) => (
-                <ol style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, paddingLeft: 20 }}>{children}</ol>
-              ),
-              li: ({ children }) => (
-                <li style={{ marginBottom: 4 }}>{children}</li>
-              ),
-              strong: ({ children }) => (
-                <strong style={{ color: '#F1F5F9', fontWeight: 700 }}>{children}</strong>
-              ),
-              code: ({ children, className }) => {
-                const isBlock = className?.startsWith('language-')
-                return isBlock ? (
-                  <code style={{
-                    display: 'block', fontFamily: FM, fontSize: 12,
-                    background: '#0D0D1A', color: '#A5F3FC',
-                    padding: '14px 18px', borderRadius: 8,
-                    border: `1px solid ${BORDER}`,
-                    overflowX: 'auto', lineHeight: 1.7, whiteSpace: 'pre',
-                  }}>{children}</code>
-                ) : (
-                  <code style={{
-                    fontFamily: FM, fontSize: 12, color: '#C4B5FD',
-                    background: 'rgba(124,58,237,0.12)', padding: '2px 6px',
-                    borderRadius: 4,
-                  }}>{children}</code>
-                )
-              },
-              pre: ({ children }) => (
-                <pre style={{ marginBottom: 16, marginTop: 8, borderRadius: 8, overflow: 'hidden' }}>{children}</pre>
-              ),
-              blockquote: ({ children }) => (
-                <blockquote style={{
-                  borderLeft: `3px solid ${VIOLET}`, paddingLeft: 16,
-                  margin: '0 0 16px', color: '#94A3B8',
-                  background: 'rgba(124,58,237,0.06)', borderRadius: '0 8px 8px 0',
-                  padding: '12px 16px',
-                }}>{children}</blockquote>
-              ),
-              table: ({ children }) => (
-                <div style={{ overflowX: 'auto', marginBottom: 16 }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FB, fontSize: 13 }}>{children}</table>
-                </div>
-              ),
-              th: ({ children }) => (
-                <th style={{
-                  textAlign: 'left', padding: '8px 12px',
-                  fontFamily: FD, fontWeight: 700, fontSize: 12, color: '#94A3B8',
-                  borderBottom: `1px solid ${BORDER}`, background: '#0D0D1A',
-                }}>{children}</th>
-              ),
-              td: ({ children }) => (
-                <td style={{
-                  padding: '8px 12px', color: '#CBD5E1',
-                  borderBottom: `1px solid ${BORDER}`,
-                }}>{children}</td>
-              ),
-              hr: () => (
-                <hr style={{ border: 'none', borderTop: `1px solid ${BORDER}`, margin: '24px 0' }} />
-              ),
+        {saveError && (
+          <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12, textAlign: 'right' }}>
+            ✗ {saveError}
+          </p>
+        )}
+
+        {/* PRD content — view or edit */}
+        {editMode ? (
+          <textarea
+            value={draftPrd}
+            onChange={e => setDraftPrd(e.target.value)}
+            spellCheck={false}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              minHeight: 640, resize: 'vertical',
+              background: SURFACE, border: `1px solid rgba(124,58,237,0.4)`,
+              borderRadius: 16, padding: '28px 32px',
+              fontFamily: FM, fontSize: 13, color: '#CBD5E1',
+              lineHeight: 1.75, outline: 'none',
             }}
-          >
-            {project.prdMarkdown}
-          </ReactMarkdown>
-        </div>
+          />
+        ) : (
+          <div style={{
+            background: SURFACE, border: `1px solid ${BORDER}`,
+            borderRadius: 16, padding: '36px 40px',
+          }}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                h1: ({ children }) => (
+                  <h1 style={{ fontFamily: FS, fontSize: 22, fontWeight: 700, color: '#F8FAFC', marginTop: 0, marginBottom: 16, paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>{children}</h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 style={{ fontFamily: FS, fontSize: 17, fontWeight: 700, color: '#F8FAFC', marginTop: 32, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${BORDER}` }}>{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 style={{ fontFamily: FD, fontSize: 14, fontWeight: 700, color: '#E2E8F0', marginTop: 20, marginBottom: 8 }}>{children}</h3>
+                ),
+                p: ({ children }) => (
+                  <p style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, marginTop: 0 }}>{children}</p>
+                ),
+                ul: ({ children }) => (
+                  <ul style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, paddingLeft: 20 }}>{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, paddingLeft: 20 }}>{children}</ol>
+                ),
+                li: ({ children }) => (
+                  <li style={{ marginBottom: 4 }}>{children}</li>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ color: '#F1F5F9', fontWeight: 700 }}>{children}</strong>
+                ),
+                code: ({ children, className }) => {
+                  const isBlock = className?.startsWith('language-')
+                  return isBlock ? (
+                    <code style={{
+                      display: 'block', fontFamily: FM, fontSize: 12,
+                      background: '#0D0D1A', color: '#A5F3FC',
+                      padding: '14px 18px', borderRadius: 8,
+                      border: `1px solid ${BORDER}`,
+                      overflowX: 'auto', lineHeight: 1.7, whiteSpace: 'pre',
+                    }}>{children}</code>
+                  ) : (
+                    <code style={{
+                      fontFamily: FM, fontSize: 12, color: '#C4B5FD',
+                      background: 'rgba(124,58,237,0.12)', padding: '2px 6px',
+                      borderRadius: 4,
+                    }}>{children}</code>
+                  )
+                },
+                pre: ({ children }) => (
+                  <pre style={{ marginBottom: 16, marginTop: 8, borderRadius: 8, overflow: 'hidden' }}>{children}</pre>
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote style={{
+                    borderLeft: `3px solid ${VIOLET}`,
+                    margin: '0 0 16px', color: '#94A3B8',
+                    background: 'rgba(124,58,237,0.06)', borderRadius: '0 8px 8px 0',
+                    padding: '12px 16px',
+                  }}>{children}</blockquote>
+                ),
+                table: ({ children }) => (
+                  <div style={{ overflowX: 'auto', marginBottom: 16 }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FB, fontSize: 13 }}>{children}</table>
+                  </div>
+                ),
+                th: ({ children }) => (
+                  <th style={{
+                    textAlign: 'left', padding: '8px 12px',
+                    fontFamily: FD, fontWeight: 700, fontSize: 12, color: '#94A3B8',
+                    borderBottom: `1px solid ${BORDER}`, background: '#0D0D1A',
+                  }}>{children}</th>
+                ),
+                td: ({ children }) => (
+                  <td style={{
+                    padding: '8px 12px', color: '#CBD5E1',
+                    borderBottom: `1px solid ${BORDER}`,
+                  }}>{children}</td>
+                ),
+                hr: () => (
+                  <hr style={{ border: 'none', borderTop: `1px solid ${BORDER}`, margin: '24px 0' }} />
+                ),
+              }}
+            >
+              {project.prdMarkdown}
+            </ReactMarkdown>
+          </div>
+        )}
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>

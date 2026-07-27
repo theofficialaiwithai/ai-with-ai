@@ -37,6 +37,7 @@ type Project = {
   prdMarkdown: string
   domainRiskFlagged: boolean
   domainRiskAcknowledged: boolean
+  existingAppUrl: string | null
   createdAt: string
 }
 
@@ -152,6 +153,28 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
             }}>
               {BUILD_TOOL_LABELS[project.buildTool] ?? project.buildTool}
             </span>
+            {project.existingAppUrl && (
+              <a
+                href={project.existingAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: FM, fontSize: 11, fontWeight: 600,
+                  letterSpacing: '0.04em', color: '#7C3AED',
+                  background: 'rgba(124,58,237,0.08)',
+                  border: '1px solid rgba(124,58,237,0.25)',
+                  padding: '3px 10px', borderRadius: 4,
+                  textDecoration: 'none',
+                  maxWidth: 260, overflow: 'hidden',
+                  textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  display: 'inline-block',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.15)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
+              >
+                ↗ {project.existingAppUrl.replace(/^https?:\/\//, '')}
+              </a>
+            )}
             {project.createdAt && (
               <span style={{ fontFamily: FB, fontSize: 12, color: '#64748B' }}>
                 {formatDate(project.createdAt)}

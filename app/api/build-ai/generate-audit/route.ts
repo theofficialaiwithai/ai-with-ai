@@ -103,10 +103,11 @@ export async function POST(req: Request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
-    const { appDescription, stackDescription, manualTasksDescription } = body
+    const { appDescription, stackDescription, manualTasksDescription, existingAppUrl } = body
     if (!appDescription || !stackDescription || !manualTasksDescription) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+    const appUrl: string | null = (typeof existingAppUrl === 'string' && existingAppUrl.trim()) ? existingAppUrl.trim() : null
 
     const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY! })
 
@@ -115,7 +116,7 @@ export async function POST(req: Request) {
 ## App Being Analyzed
 **Description:** ${appDescription}
 **Current stack:** ${stackDescription}
-**Things that feel manual today:** ${manualTasksDescription}
+**Things that feel manual today:** ${manualTasksDescription}${appUrl ? `\n**Live app URL (for reference only):** ${appUrl}` : ''}
 
 ## Your Task
 
@@ -169,6 +170,7 @@ Be specific to this app. Reference the actual stack, the actual manual tasks, an
       prdMarkdown: storedPrd,
       domainRiskFlagged: flagged,
       domainRiskAcknowledged: false,
+      existingAppUrl: appUrl,
     }).returning()
 
     await db.insert(agenticAudits).values(

@@ -143,6 +143,7 @@ export default function NewProjectPage() {
   const [appDescription, setAppDescription] = useState('')
   const [stackDescription, setStackDescription] = useState('')
   const [manualTasksDescription, setManualTasksDescription] = useState('')
+  const [existingAppUrl, setExistingAppUrl] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -184,7 +185,7 @@ export default function NewProjectPage() {
       const res = await fetch('/api/build-ai/generate-audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appDescription, stackDescription, manualTasksDescription }),
+        body: JSON.stringify({ appDescription, stackDescription, manualTasksDescription, existingAppUrl: existingAppUrl.trim() || undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Audit failed')
@@ -343,6 +344,24 @@ export default function NewProjectPage() {
                   onChange={setManualTasksDescription}
                   placeholder="e.g. Every Monday we export a CSV of last week's posts and manually paste metrics into a Google Sheet. Clients email us for status updates instead of seeing a live dashboard."
                   rows={4}
+                />
+              </div>
+              <div>
+                <Label>Link to your app (optional)</Label>
+                <input
+                  type="url"
+                  value={existingAppUrl}
+                  onChange={e => setExistingAppUrl(e.target.value)}
+                  placeholder="https://your-app.com"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    background: '#0D0D1A', border: `1px solid ${BORDER}`,
+                    borderRadius: 10, padding: '11px 14px',
+                    fontFamily: FB, fontSize: 14, color: '#F8FAFC',
+                    outline: 'none', transition: 'border-color 0.15s',
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = VIOLET }}
+                  onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
                 />
               </div>
               {error && (

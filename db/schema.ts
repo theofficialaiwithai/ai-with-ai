@@ -119,6 +119,7 @@ export const buildProjects = pgTable('build_projects', {
   prdMarkdown: text('prd_markdown'),
   domainRiskFlagged: boolean('domain_risk_flagged').notNull().default(false),
   domainRiskAcknowledged: boolean('domain_risk_acknowledged').notNull().default(false),
+  existingAppUrl: text('existing_app_url'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => [

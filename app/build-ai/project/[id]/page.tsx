@@ -30,6 +30,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
         prdMarkdown: project.prdMarkdown ?? '',
         domainRiskFlagged: project.domainRiskFlagged,
         domainRiskAcknowledged: project.domainRiskAcknowledged,
+        existingAppUrl: project.existingAppUrl ?? null,
         createdAt: project.createdAt?.toISOString() ?? '',
       }}
     />

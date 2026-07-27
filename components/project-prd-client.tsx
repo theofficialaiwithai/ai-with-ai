@@ -543,6 +543,24 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
             </p>
           )}
 
+          {/* Continue to coach when steps are already generated */}
+          {(project.status === 'building' || project.status === 'complete') && (
+            <button
+              onClick={() => router.push(`/build-ai/project/${project.id}/coach`)}
+              style={{
+                background: project.status === 'complete' ? 'rgba(16,185,129,0.15)' : VIOLET,
+                border: project.status === 'complete' ? '1px solid rgba(16,185,129,0.35)' : 'none',
+                color: project.status === 'complete' ? '#6EE7B7' : '#fff',
+                fontFamily: FD, fontWeight: 700, fontSize: 16,
+                padding: '16px 0', borderRadius: 12, width: '100%',
+                cursor: 'pointer', transition: 'all 0.2s',
+                boxShadow: project.status === 'building' ? '0 6px 28px rgba(124,58,237,0.4)' : 'none',
+              }}
+            >
+              {project.status === 'complete' ? '✓ View Completed Build' : 'Continue Building →'}
+            </button>
+          )}
+
           {/* New Project link */}
           <button
             onClick={() => router.push('/build-ai/new')}

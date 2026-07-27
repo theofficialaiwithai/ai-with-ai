@@ -87,7 +87,7 @@ Expand the MVP Build Order into full step prompts. For each step, also provide a
         model: anthropic('claude-haiku-4-5-20251001'),
         schema: BuildStepsSchema,
         prompt,
-        maxTokens: 3000,
+        maxOutputTokens: 3000,
       })
       result = object
     } catch (err) {

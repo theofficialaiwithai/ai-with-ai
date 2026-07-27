@@ -145,8 +145,11 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
       const res = await fetch(`/api/build-ai/project/${project.id}/generate-steps`, {
         method: 'POST',
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to generate steps')
+      if (!res.ok) {
+        let msg = `Server error (${res.status})`
+        try { const d = await res.json(); msg = d.error ?? msg } catch {}
+        throw new Error(msg)
+      }
       router.push(`/build-ai/project/${project.id}/coach`)
     } catch (err) {
       setBuildError(err instanceof Error ? err.message : 'Something went wrong')

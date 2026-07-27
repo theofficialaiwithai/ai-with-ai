@@ -5,10 +5,9 @@ import { db } from '@/db'
 import { profiles } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL!
-
 export async function POST(req: Request) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL!
   const { userId } = await auth()
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 

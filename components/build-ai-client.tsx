@@ -70,7 +70,7 @@ function ProjectCard({ project }: { project: Project }) {
   const router = useRouter()
   return (
     <div
-      onClick={() => router.push(`/build-ai/${project.id}`)}
+      onClick={() => router.push(`/build-ai/project/${project.id}`)}
       style={{
         background: SURFACE, border: `1px solid ${BORDER}`,
         borderRadius: 14, padding: '22px 24px',

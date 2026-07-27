@@ -198,6 +198,20 @@ export const generationLogs = pgTable('generation_logs', {
   check('generation_logs_type_check', sql`${table.generationType} IN ('prd','audit')`),
 ])
 
+export const prdSections = pgTable('prd_sections', {
+  id: serial('id').primaryKey(),
+  projectId: integer('project_id')
+    .references(() => buildProjects.id)
+    .notNull(),
+  sectionNumber: integer('section_number').notNull(),
+  sectionName: text('section_name').notNull(),
+  contentMarkdown: text('content_markdown').notNull(),
+  isApproved: boolean('is_approved').notNull().default(false),
+  approvedAt: timestamp('approved_at'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+})
+
 // ── Automation Controls ───────────────────────────────────────────────────
 
 export const automationControls = pgTable('automation_controls', {

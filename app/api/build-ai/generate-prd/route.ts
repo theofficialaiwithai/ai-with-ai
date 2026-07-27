@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import { generateText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { db } from '@/db'
-import { buildProjects, generationLogs } from '@/db/schema'
+import { buildProjects, generationLogs, prdSections } from '@/db/schema'
 import { eq, sql } from 'drizzle-orm'
 import { checkDomainRisk } from '@/lib/domain-risk'
 
@@ -13,6 +13,24 @@ function deriveTitle(ideaDescription: string): string {
   const trimmed = ideaDescription.trim()
   const sentence = trimmed.split(/[.!?\n]/)[0].trim()
   return sentence.length > 60 ? sentence.slice(0, 57) + '…' : sentence
+}
+
+function parsePrdIntoSections(prdText: string): { name: string; content: string }[] {
+  const chunks = prdText.split(/\n(?=## )/)
+  const sections: { name: string; content: string }[] = []
+  for (const chunk of chunks) {
+    const trimmed = chunk.trim()
+    if (!trimmed.startsWith('## ')) continue
+    const newlineIdx = trimmed.indexOf('\n')
+    if (newlineIdx === -1) {
+      sections.push({ name: trimmed.slice(3).trim(), content: '' })
+    } else {
+      const name = trimmed.slice(3, newlineIdx).trim()
+      const content = trimmed.slice(newlineIdx + 1).trim()
+      sections.push({ name, content })
+    }
+  }
+  return sections
 }
 
 export async function POST(req: Request) {
@@ -38,13 +56,11 @@ export async function POST(req: Request) {
     }
     const toolLabel = buildToolLabel[buildTool] ?? buildTool
 
-    // Count existing projects to determine intro blurb length
     const [{ n: projectCount }] = await db
       .select({ n: sql<number>`count(*)::int` })
       .from(buildProjects)
       .where(eq(buildProjects.userId, userId))
-    const isFirstProject = projectCount === 0
-    console.log('[generate-prd] project count:', projectCount, 'isFirstProject:', isFirstProject)
+    console.log('[generate-prd] project count:', projectCount)
 
     const prompt = `You are a senior product strategist helping an indie builder create a focused, actionable PRD.
 
@@ -137,23 +153,15 @@ Rules:
     const { flagged, categories } = checkDomainRisk(prdText)
     console.log('[generate-prd] domain risk result:', { flagged, categories })
 
-    const introBanner = isFirstProject
-      ? `> **What is this PRD?** A Product Requirements Document is the blueprint for your app — it defines what you're building, who it's for, the data it stores, and the order to build it in. Think of it as the brief you hand to ${toolLabel} before writing a single line of code.
->
-> **How to use it with ${toolLabel}:** Open a new ${toolLabel} session and start with the Data Schema section — paste the SQL and ask ${toolLabel} to set up your database first. Then work through the MVP Build Order one step at a time. Each step is designed to be a single focused session. The Tech Stack and App Routes sections give ${toolLabel} the context it needs to make consistent decisions throughout your build.
->
-> **Before you start:** Scan the Tech Stack and MVP Features sections and confirm any "recommended: X" choices that carry cost or lock-in (database provider, auth service, hosting). Once you've confirmed those, everything else can be taken as-is.
+    // Parse into sections
+    const parsedSections = parsePrdIntoSections(prdText)
+    console.log('[generate-prd] parsed', parsedSections.length, 'sections')
 
-`
-      : `> You've built before — jump straight to the Data Schema and MVP Build Order and paste Step 1 into ${toolLabel} to get started.
-
-`
-
-    const domainRiskBanner = flagged
-      ? `> ⚠️ **Domain risk detected** — this PRD touches sensitive categories: **${categories.join(', ')}**. Review carefully before building. Some features may require legal, compliance, or security review.\n\n`
-      : ''
-
-    const storedPrd = introBanner + domainRiskBanner + prdText
+    // Prepend domain risk banner to section 1 if flagged
+    if (flagged && parsedSections.length > 0) {
+      const banner = `> ⚠️ **Domain risk detected** — this PRD touches sensitive categories: **${categories.join(', ')}**. Review carefully before building. Some features may require legal, compliance, or security review.\n\n`
+      parsedSections[0].content = banner + parsedSections[0].content
+    }
 
     const title = deriveTitle(ideaDescription)
     console.log('[generate-prd] derived title:', title)
@@ -164,12 +172,25 @@ Rules:
       title,
       path: 'from_scratch',
       buildTool,
-      status: 'prd_generated',
-      prdMarkdown: storedPrd,
+      status: 'reviewing_sections',
+      prdMarkdown: null,
       domainRiskFlagged: flagged,
       domainRiskAcknowledged: false,
     }).returning()
     console.log('[generate-prd] buildProjects insert done, project.id:', project?.id)
+
+    if (parsedSections.length > 0) {
+      console.log('[generate-prd] inserting', parsedSections.length, 'prd_sections rows')
+      await db.insert(prdSections).values(
+        parsedSections.map((s, i) => ({
+          projectId: project.id,
+          sectionNumber: i + 1,
+          sectionName: s.name,
+          contentMarkdown: s.content,
+        }))
+      )
+      console.log('[generate-prd] prd_sections insert done')
+    }
 
     console.log('[generate-prd] inserting generationLogs row')
     await db.insert(generationLogs).values({
@@ -186,8 +207,6 @@ Rules:
   } catch (err) {
     console.error('[generate-prd] full handler error:', err)
     console.error('[generate-prd] error stack:', err instanceof Error ? err.stack : '(no stack)')
-    console.error('[generate-prd] error name:', err instanceof Error ? err.name : typeof err)
-    console.error('[generate-prd] error message:', err instanceof Error ? err.message : String(err))
     return NextResponse.json(
       { error: `Handler failed: ${err instanceof Error ? err.message : String(err)}` },
       { status: 500 }

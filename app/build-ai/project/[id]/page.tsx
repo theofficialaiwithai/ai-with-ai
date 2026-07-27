@@ -21,6 +21,10 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
 
   if (!project) notFound()
 
+  if (project.status === 'reviewing_sections') {
+    redirect(`/build-ai/project/${id}/review`)
+  }
+
   const { categories: riskCategories } = project.domainRiskFlagged
     ? checkDomainRisk(project.prdMarkdown ?? '')
     : { categories: [] as string[] }

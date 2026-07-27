@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { SignOutButton } from '@clerk/nextjs'
 
 /* ── font tokens ── */
@@ -294,6 +294,7 @@ function Badge({ children, color, bg, border }: { children: React.ReactNode; col
 /* ── main dashboard ── */
 export default function DashboardClient({ profile, sessions }: Props) {
   const router = useRouter()
+  const pathname = usePathname()
   const [showModal, setShowModal] = useState(false)
   const [completedOpen, setCompletedOpen] = useState(false)
 
@@ -338,6 +339,34 @@ export default function DashboardClient({ profile, sessions }: Props) {
           <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 15, color: '#F8FAFC' }}>
             AI with AI
           </span>
+        </div>
+
+        {/* Centre: section tabs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {[
+            { label: 'Dashboard', href: '/dashboard' },
+            { label: 'Build AI with AI', href: '/build-ai' },
+          ].map(({ label, href }) => {
+            const active = pathname === href
+            return (
+              <button
+                key={href}
+                onClick={() => router.push(href)}
+                style={{
+                  background: active ? 'rgba(124,58,237,0.12)' : 'none',
+                  border: active ? '1px solid rgba(124,58,237,0.3)' : '1px solid transparent',
+                  borderRadius: 7, padding: '5px 14px',
+                  fontFamily: FD, fontWeight: active ? 600 : 500, fontSize: 13,
+                  color: active ? '#C4B5FD' : '#94A3B8',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#F8FAFC' }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#94A3B8' }}
+              >
+                {label}
+              </button>
+            )
+          })}
         </div>
 
         {/* Right: name + sign out */}

@@ -162,8 +162,13 @@ export default function NewProjectPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Generation failed')
+      if (!data.projectId) throw new Error('Project created but no ID returned')
       router.push(`/build-ai/project/${data.projectId}`)
     } catch (err) {
+      console.error('[new-project] client error:', err)
+      console.error('[new-project] error stack:', err instanceof Error ? err.stack : '(no stack)')
+      console.error('[new-project] error name:', err instanceof Error ? err.name : typeof err)
+      console.error('[new-project] error message:', err instanceof Error ? err.message : String(err))
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setLoading(false)
     }

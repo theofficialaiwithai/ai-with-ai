@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { buildProjects, projectSteps } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { getCurrentLevel } from '@/lib/leveling'
 
 export async function POST(
   _req: Request,
@@ -45,12 +46,17 @@ export async function POST(
 
   const allComplete = allSteps.every(s => s.isComplete)
 
+  let newLevel: number | undefined
   if (allComplete) {
     await db
       .update(buildProjects)
       .set({ status: 'complete', updatedAt: new Date() })
       .where(eq(buildProjects.id, step.projectId))
+
+    if (project.path === 'level_project') {
+      newLevel = await getCurrentLevel(userId)
+    }
   }
 
-  return NextResponse.json({ ok: true, allComplete })
+  return NextResponse.json({ ok: true, allComplete, newLevel })
 }

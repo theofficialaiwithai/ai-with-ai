@@ -31,6 +31,11 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
   const currentStep = steps.find(s => !s.isComplete) ?? null
   const allComplete = currentStep === null
 
+  const isLevelProject = project.path === 'level_project'
+  const levelBackLink = isLevelProject && project.levelNumber != null
+    ? `/build-ai/levels/${project.levelNumber}`
+    : null
+
   if (allComplete) {
     return (
       <BuildCoachClient
@@ -38,6 +43,8 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
         projectId={project.id}
         projectTitle={project.title}
         totalSteps={steps.length}
+        isLevelProject={isLevelProject}
+        levelBackLink={levelBackLink}
       />
     )
   }
@@ -56,6 +63,8 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
       }}
       currentStepNumber={currentStep.stepNumber}
       totalSteps={steps.length}
+      isLevelProject={isLevelProject}
+      levelBackLink={levelBackLink}
     />
   )
 }

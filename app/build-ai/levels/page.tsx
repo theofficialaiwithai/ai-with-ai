@@ -1,8 +1,8 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { levels } from '@/db/schema'
-import { asc } from 'drizzle-orm'
+import { levels, levelProjectTemplates, buildProjects } from '@/db/schema'
+import { eq, and, asc } from 'drizzle-orm'
 import { getCurrentLevel, levelBandColor } from '@/lib/leveling'
 import Link from 'next/link'
 
@@ -24,25 +24,44 @@ export default async function LevelsPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const [allLevels, currentLevel] = await Promise.all([
+  const [allLevels, templates, completedProjects, currentLevel] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.levelNumber)),
+    db.select({ levelNumber: levelProjectTemplates.levelNumber, projectNumber: levelProjectTemplates.projectNumber })
+      .from(levelProjectTemplates),
+    db.select({ levelNumber: buildProjects.levelNumber, levelProjectNumber: buildProjects.levelProjectNumber })
+      .from(buildProjects)
+      .where(and(
+        eq(buildProjects.userId, userId),
+        eq(buildProjects.path, 'level_project'),
+        eq(buildProjects.status, 'complete'),
+      )),
     getCurrentLevel(userId),
   ])
 
+  // Build per-level template count and completion count
+  const templatesByLevel = new Map<number, number>()
+  for (const t of templates) {
+    templatesByLevel.set(t.levelNumber, (templatesByLevel.get(t.levelNumber) ?? 0) + 1)
+  }
+
+  const doneByLevel = new Map<number, number>()
+  for (const p of completedProjects) {
+    if (p.levelNumber != null) {
+      doneByLevel.set(p.levelNumber, (doneByLevel.get(p.levelNumber) ?? 0) + 1)
+    }
+  }
+
   const BG = '#0F0F14'
-  const SURFACE = '#1A1A24'
   const BORDER = 'rgba(255,255,255,0.06)'
   const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
   const FB = "var(--font-inter,'Inter'),sans-serif"
   const FM = "var(--font-jetbrains-mono,'JetBrains Mono'),monospace"
   const FS = "var(--font-sora,'Sora'),sans-serif"
 
-  // Ordered top-to-bottom: level 10 first
   const ordered = [...allLevels].reverse()
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
-      {/* Nav */}
       <nav style={{
         height: 56, background: 'rgba(15,15,20,0.9)', backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${BORDER}`,
@@ -60,7 +79,6 @@ export default async function LevelsPage() {
       </nav>
 
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '56px 24px 100px' }}>
-        {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <h1 style={{
             fontFamily: FS, fontSize: 28, fontWeight: 700,
@@ -69,20 +87,15 @@ export default async function LevelsPage() {
             Level Map
           </h1>
           <p style={{ fontFamily: FB, fontSize: 14, color: '#64748B', margin: 0, lineHeight: 1.6 }}>
-            Complete the checkpoints at each level to advance. You&apos;re currently at{' '}
+            Complete all mini-projects at each level to advance. You&apos;re currently at{' '}
             <span style={{ color: '#F8FAFC', fontWeight: 600 }}>Level {currentLevel}</span>.
           </p>
         </div>
 
-        {/* Ladder */}
         <div style={{ position: 'relative' }}>
-          {/* Vertical connector line */}
+          {/* Connector line */}
           <div style={{
-            position: 'absolute',
-            left: 23,
-            top: 24,
-            bottom: 24,
-            width: 2,
+            position: 'absolute', left: 23, top: 24, bottom: 24, width: 2,
             background: 'linear-gradient(to bottom, rgba(203,255,77,0.3), rgba(255,79,112,0.3), rgba(124,58,237,0.3), rgba(19,97,227,0.3))',
             zIndex: 0,
           }} />
@@ -94,6 +107,8 @@ export default async function LevelsPage() {
               const isCurrentLevel = n === currentLevel
               const isComplete = n < currentLevel
               const shortName = LEVEL_SHORT[n] ?? level.name
+              const total = templatesByLevel.get(n) ?? 0
+              const done = doneByLevel.get(n) ?? 0
 
               return (
                 <Link
@@ -108,7 +123,6 @@ export default async function LevelsPage() {
                     borderRadius: isCurrentLevel ? 12 : 0,
                     border: isCurrentLevel ? `1px solid ${color}35` : '1px solid transparent',
                     marginBottom: 4,
-                    transition: 'background 0.15s',
                   }}>
                     {/* Circle node */}
                     <div style={{
@@ -124,10 +138,7 @@ export default async function LevelsPage() {
                           <path d="M4 9l4 4 6-7" stroke={n === 10 ? '#000' : '#fff'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       ) : (
-                        <span style={{
-                          fontFamily: FM, fontSize: 13, fontWeight: 700,
-                          color: isCurrentLevel ? color : '#4B5563',
-                        }}>
+                        <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: isCurrentLevel ? color : '#4B5563' }}>
                           {n}
                         </span>
                       )}
@@ -138,14 +149,14 @@ export default async function LevelsPage() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                         <span style={{
                           fontFamily: FM, fontSize: 10, fontWeight: 700,
-                          color: color, letterSpacing: '0.07em', textTransform: 'uppercase',
+                          color, letterSpacing: '0.07em', textTransform: 'uppercase',
                         }}>
                           Level {n}
                         </span>
                         {isCurrentLevel && (
                           <span style={{
                             fontFamily: FB, fontSize: 10, fontWeight: 600,
-                            color: color, background: `${color}20`,
+                            color, background: `${color}20`,
                             borderRadius: 6, padding: '1px 7px',
                           }}>
                             current
@@ -166,9 +177,18 @@ export default async function LevelsPage() {
                         color: isCurrentLevel ? '#F8FAFC' : isComplete ? '#94A3B8' : '#64748B',
                         letterSpacing: '-0.01em',
                         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        marginBottom: total > 0 ? 3 : 0,
                       }}>
                         {shortName}
                       </div>
+                      {total > 0 && (
+                        <span style={{
+                          fontFamily: FM, fontSize: 10,
+                          color: done === total ? '#10B981' : isCurrentLevel ? color : '#4B5563',
+                        }}>
+                          {done}/{total} projects complete
+                        </span>
+                      )}
                     </div>
 
                     {/* Chevron */}

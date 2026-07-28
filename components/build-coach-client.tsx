@@ -29,6 +29,8 @@ interface Props {
   currentStepNumber: number
   totalSteps: number
   allComplete: false
+  isLevelProject?: boolean
+  levelBackLink?: string | null
 }
 
 interface CompleteProps {
@@ -36,6 +38,8 @@ interface CompleteProps {
   projectTitle: string
   totalSteps: number
   allComplete: true
+  isLevelProject?: boolean
+  levelBackLink?: string | null
 }
 
 export default function BuildCoachClient(props: Props | CompleteProps) {
@@ -44,9 +48,19 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   const [copied, setCopied] = useState(false)
   const [marking, setMarking] = useState(false)
   const [markError, setMarkError] = useState<string | null>(null)
+  const [completionLevel, setCompletionLevel] = useState<number | null>(null)
 
   if (props.allComplete) {
-    return <CompletionScreen projectId={props.projectId} projectTitle={props.projectTitle} totalSteps={props.totalSteps} />
+    return (
+      <CompletionScreen
+        projectId={props.projectId}
+        projectTitle={props.projectTitle}
+        totalSteps={props.totalSteps}
+        isLevelProject={props.isLevelProject}
+        levelBackLink={props.levelBackLink}
+        newLevel={completionLevel}
+      />
+    )
   }
 
   const { projectId, projectTitle, step, currentStepNumber, totalSteps } = props
@@ -58,7 +72,6 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Fallback for browsers that don't support clipboard API
       const el = document.createElement('textarea')
       el.value = step.promptText
       document.body.appendChild(el)
@@ -79,6 +92,10 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error ?? `Failed (${res.status})`)
       }
+      const data = await res.json()
+      if (data.allComplete && data.newLevel != null) {
+        setCompletionLevel(data.newLevel)
+      }
       startTransition(() => { router.refresh() })
     } catch (err) {
       setMarkError(err instanceof Error ? err.message : 'Something went wrong')
@@ -89,7 +106,7 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
 
-      {/* Progress bar — top of viewport */}
+      {/* Progress bar */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: 3, zIndex: 100, background: 'rgba(255,255,255,0.04)' }}>
         <div style={{
           height: '100%', width: `${progressPct}%`,
@@ -147,7 +164,6 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
           background: SURFACE, border: `1px solid ${BORDER}`,
           borderRadius: 16, marginBottom: 20, overflow: 'hidden',
         }}>
-          {/* Block header */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '12px 18px', borderBottom: `1px solid ${BORDER}`,
@@ -213,7 +229,6 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
           </div>
         )}
 
-        {/* Mark done */}
         {markError && (
           <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12 }}>✗ {markError}</p>
         )}
@@ -239,7 +254,23 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   )
 }
 
-function CompletionScreen({ projectId, projectTitle, totalSteps }: { projectId: number; projectTitle: string; totalSteps: number }) {
+function CompletionScreen({
+  projectId,
+  projectTitle,
+  totalSteps,
+  isLevelProject,
+  levelBackLink,
+  newLevel,
+}: {
+  projectId: number
+  projectTitle: string
+  totalSteps: number
+  isLevelProject?: boolean
+  levelBackLink?: string | null
+  newLevel?: number | null
+}) {
+  const leveledUp = isLevelProject && newLevel != null
+
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
       <nav style={{
@@ -260,13 +291,29 @@ function CompletionScreen({ projectId, projectTitle, totalSteps }: { projectId: 
         <span style={{ fontFamily: FD, fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>Build Coach</span>
       </nav>
 
-      {/* Full progress bar */}
       <div style={{ height: 3, background: 'rgba(255,255,255,0.04)' }}>
         <div style={{ height: '100%', width: '100%', background: `linear-gradient(90deg, ${VIOLET}, #10B981)` }} />
       </div>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ textAlign: 'center', maxWidth: 480 }}>
+
+          {/* Level-up banner — shown immediately when a level project's completion advances the level */}
+          {leveledUp && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.35)',
+              borderRadius: 20, padding: '6px 16px', marginBottom: 24,
+            }}>
+              <span style={{ fontFamily: FM, fontSize: 11, color: '#9D5AF0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Level up
+              </span>
+              <span style={{ fontFamily: FS, fontSize: 18, fontWeight: 800, color: '#C4B5FD' }}>
+                → {newLevel}
+              </span>
+            </div>
+          )}
+
           <div style={{
             width: 72, height: 72, borderRadius: '50%', margin: '0 auto 28px',
             background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(16,185,129,0.4)',
@@ -279,20 +326,36 @@ function CompletionScreen({ projectId, projectTitle, totalSteps }: { projectId: 
             Build complete
           </h1>
           <p style={{ fontFamily: FB, fontSize: 15, color: '#94A3B8', lineHeight: 1.7, margin: '0 0 36px' }}>
-            You shipped all {totalSteps} steps of {projectTitle}. Time to deploy, iterate, and make it real.
+            You shipped all {totalSteps} steps of {projectTitle}.{leveledUp ? ` That's Level ${newLevel} unlocked.` : ' Time to deploy, iterate, and make it real.'}
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            {levelBackLink && (
+              <a
+                href={levelBackLink}
+                style={{
+                  background: VIOLET, color: '#fff', border: 'none',
+                  borderRadius: 10, padding: '11px 24px',
+                  fontFamily: FD, fontWeight: 600, fontSize: 14,
+                  textDecoration: 'none', display: 'inline-block',
+                  boxShadow: '0 4px 20px rgba(124,58,237,0.35)',
+                }}
+              >
+                Back to Level →
+              </a>
+            )}
             <a
               href={`/build-ai/project/${projectId}`}
               style={{
-                background: VIOLET, color: '#fff', border: 'none',
+                background: levelBackLink ? 'rgba(255,255,255,0.05)' : VIOLET,
+                color: levelBackLink ? '#94A3B8' : '#fff',
+                border: `1px solid ${levelBackLink ? BORDER : 'transparent'}`,
                 borderRadius: 10, padding: '11px 24px',
                 fontFamily: FD, fontWeight: 600, fontSize: 14,
                 textDecoration: 'none', display: 'inline-block',
-                boxShadow: '0 4px 20px rgba(124,58,237,0.35)',
+                boxShadow: levelBackLink ? 'none' : '0 4px 20px rgba(124,58,237,0.35)',
               }}
             >
-              View Project →
+              View Project
             </a>
             <a
               href="/build-ai"

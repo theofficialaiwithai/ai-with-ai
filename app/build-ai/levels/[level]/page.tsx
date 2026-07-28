@@ -3,9 +3,10 @@ import { redirect, notFound } from 'next/navigation'
 import { db } from '@/db'
 import { levels } from '@/db/schema'
 import { eq } from 'drizzle-orm'
-import { levelBandColor } from '@/lib/leveling'
+import { levelBandColor, getLevelProjectStatus } from '@/lib/leveling'
 import { LEVEL_LESSONS } from '@/lib/level-content'
 import Link from 'next/link'
+import LevelProjectCards from '@/components/level-project-cards'
 
 const BG = '#0F0F14'
 const BORDER = 'rgba(255,255,255,0.06)'
@@ -26,10 +27,10 @@ export default async function LevelDetailPage({
   const levelNumber = parseInt(levelParam, 10)
   if (isNaN(levelNumber) || levelNumber < 0 || levelNumber > 10) notFound()
 
-  const [levelRow] = await db
-    .select()
-    .from(levels)
-    .where(eq(levels.levelNumber, levelNumber))
+  const [[levelRow], projects] = await Promise.all([
+    db.select().from(levels).where(eq(levels.levelNumber, levelNumber)),
+    getLevelProjectStatus(userId, levelNumber),
+  ])
 
   if (!levelRow) notFound()
 
@@ -58,6 +59,8 @@ export default async function LevelDetailPage({
       </nav>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '56px 24px 100px' }}>
+
+        {/* Header */}
         <div style={{ marginBottom: 40 }}>
           <span style={{
             fontFamily: FM, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
@@ -82,9 +85,11 @@ export default async function LevelDetailPage({
           </p>
         </div>
 
+        {/* Lesson */}
         <div style={{
           background: SURFACE, border: `1px solid ${BORDER}`,
           borderRadius: 14, padding: '28px',
+          marginBottom: 36,
         }}>
           <span style={{
             fontFamily: FM, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
@@ -104,6 +109,14 @@ export default async function LevelDetailPage({
             ))}
           </div>
         </div>
+
+        {/* Project cards — client component (handles Start button, deployed URL) */}
+        <LevelProjectCards
+          levelNumber={levelNumber}
+          projects={projects}
+          bandColor={bandColor}
+        />
+
       </div>
     </div>
   )

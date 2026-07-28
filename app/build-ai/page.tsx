@@ -4,23 +4,20 @@ import { db } from '@/db'
 import { profiles, buildProjects } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import BuildAiClient from '@/components/build-ai-client'
-
-// Stub — returns 0 until real level logic is wired in Step 7
-function getCurrentLevel(): number {
-  return 0
-}
+import { getCurrentLevel } from '@/lib/leveling'
 
 export default async function BuildAiPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const [user, profile, projects] = await Promise.all([
+  const [user, profile, projects, currentLevel] = await Promise.all([
     currentUser(),
     db.query.profiles.findFirst({ where: eq(profiles.id, userId) }),
     db.query.buildProjects.findMany({
       where: eq(buildProjects.userId, userId),
       orderBy: [desc(buildProjects.updatedAt)],
     }),
+    getCurrentLevel(userId),
   ])
 
   if (!profile) redirect('/sign-in')
@@ -33,7 +30,7 @@ export default async function BuildAiPage() {
   return (
     <BuildAiClient
       userName={displayName}
-      currentLevel={getCurrentLevel()}
+      currentLevel={currentLevel}
       projects={projects.map(p => ({
         id: p.id,
         title: p.title,

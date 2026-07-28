@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from 'next/navigation'
 import { SignOutButton } from '@clerk/nextjs'
+import Link from 'next/link'
 
 const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
 const FB = "var(--font-inter,'Inter'),sans-serif"
@@ -197,14 +198,17 @@ export default function BuildAiClient({ userName, currentLevel, projects }: Prop
               Build AI with AI
             </h1>
             {/* Level badge */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)',
-              borderRadius: 20, padding: '4px 12px',
-            }}>
-              <span style={{ fontFamily: FM, fontSize: 10, color: '#9D5AF0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Level</span>
-              <span style={{ fontFamily: FS, fontSize: 14, fontWeight: 700, color: '#C4B5FD' }}>{currentLevel}</span>
-            </div>
+            <Link href="/build-ai/levels" style={{ textDecoration: 'none' }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)',
+                borderRadius: 20, padding: '4px 12px', cursor: 'pointer',
+                transition: 'border-color 0.15s',
+              }}>
+                <span style={{ fontFamily: FM, fontSize: 10, color: '#9D5AF0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Level</span>
+                <span style={{ fontFamily: FS, fontSize: 14, fontWeight: 700, color: '#C4B5FD' }}>{currentLevel}</span>
+              </div>
+            </Link>
           </div>
 
           <button

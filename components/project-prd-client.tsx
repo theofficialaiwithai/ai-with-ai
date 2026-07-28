@@ -546,7 +546,7 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
           {/* Continue to coach when steps are already generated */}
           {(project.status === 'building' || project.status === 'complete') && (
             <button
-              onClick={() => router.push(`/build-ai/project/${project.id}/coach`)}
+              onClick={() => router.push(`/build-ai/project/${project.id}/${project.status === 'building' ? 'build-map' : 'coach'}`)}
               style={{
                 background: project.status === 'complete' ? 'rgba(16,185,129,0.15)' : VIOLET,
                 border: project.status === 'complete' ? '1px solid rgba(16,185,129,0.35)' : 'none',

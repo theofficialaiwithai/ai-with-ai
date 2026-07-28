@@ -1,8 +1,8 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { levels, levelCheckpoints, userCheckpointProgress } from '@/db/schema'
-import { eq, asc } from 'drizzle-orm'
+import { levels } from '@/db/schema'
+import { asc } from 'drizzle-orm'
 import { getCurrentLevel, levelBandColor } from '@/lib/leveling'
 import Link from 'next/link'
 
@@ -24,22 +24,10 @@ export default async function LevelsPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const [allLevels, checkpoints, progress, currentLevel] = await Promise.all([
+  const [allLevels, currentLevel] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.levelNumber)),
-    db.select({ id: levelCheckpoints.id, levelNumber: levelCheckpoints.levelNumber })
-      .from(levelCheckpoints),
-    db.select({ checkpointId: userCheckpointProgress.checkpointId })
-      .from(userCheckpointProgress)
-      .where(eq(userCheckpointProgress.userId, userId)),
     getCurrentLevel(userId),
   ])
-
-  const completedIds = new Set(progress.map(p => p.checkpointId))
-  const byLevel = new Map<number, number[]>()
-  for (const cp of checkpoints) {
-    if (!byLevel.has(cp.levelNumber)) byLevel.set(cp.levelNumber, [])
-    byLevel.get(cp.levelNumber)!.push(cp.id)
-  }
 
   const BG = '#0F0F14'
   const SURFACE = '#1A1A24'
@@ -103,8 +91,6 @@ export default async function LevelsPage() {
             {ordered.map((level) => {
               const n = level.levelNumber
               const color = levelBandColor(n)
-              const cps = byLevel.get(n) ?? []
-              const doneCount = cps.filter(id => completedIds.has(id)).length
               const isCurrentLevel = n === currentLevel
               const isComplete = n < currentLevel
               const shortName = LEVEL_SHORT[n] ?? level.name
@@ -183,16 +169,6 @@ export default async function LevelsPage() {
                       }}>
                         {shortName}
                       </div>
-                    </div>
-
-                    {/* Progress pips */}
-                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                      {cps.map((id) => (
-                        <div key={id} style={{
-                          width: 8, height: 8, borderRadius: '50%',
-                          background: completedIds.has(id) ? color : 'rgba(255,255,255,0.12)',
-                        }} />
-                      ))}
                     </div>
 
                     {/* Chevron */}

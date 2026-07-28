@@ -113,13 +113,9 @@ const AUTOMATION_CONTROLS = [
 ]
 
 async function seed() {
-  console.log('Clearing existing checkpoints...')
-  await db.delete(schema.levelCheckpoints)
-
   console.log('Seeding levels...')
 
   for (const level of LEVELS) {
-    // Upsert level row
     await db.insert(schema.levels)
       .values({
         levelNumber: level.levelNumber,
@@ -132,16 +128,6 @@ async function seed() {
       })
 
     console.log(`  ✓ Level ${level.levelNumber}: ${level.name.slice(0, 50)}…`)
-
-    // Insert checkpoints fresh (table was cleared above)
-    for (let i = 0; i < level.checkpoints.length; i++) {
-      await db.insert(schema.levelCheckpoints)
-        .values({
-          levelNumber: level.levelNumber,
-          checkpointText: level.checkpoints[i],
-          sortOrder: i + 1,
-        })
-    }
   }
 
   console.log('\nSeeding automation_controls...')
@@ -157,15 +143,12 @@ async function seed() {
 
   console.log('\nVerifying row counts...')
   const levelRows = await db.select().from(schema.levels)
-  const checkpointRows = await db.select().from(schema.levelCheckpoints)
   const automationRows = await db.select().from(schema.automationControls)
 
   console.log(`  levels: ${levelRows.length} rows (expected 11)`)
-  console.log(`  level_checkpoints: ${checkpointRows.length} rows (expected 22)`)
   console.log(`  automation_controls: ${automationRows.length} rows (expected 2)`)
 
   if (levelRows.length !== 11) throw new Error(`Expected 11 levels, got ${levelRows.length}`)
-  if (checkpointRows.length !== 22) throw new Error(`Expected 22 checkpoints, got ${checkpointRows.length}`)
   if (automationRows.length !== 2) throw new Error(`Expected 2 automation controls, got ${automationRows.length}`)
 
   console.log('\n✅ Seed complete.')

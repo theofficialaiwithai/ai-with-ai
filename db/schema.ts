@@ -120,10 +120,13 @@ export const buildProjects = pgTable('build_projects', {
   domainRiskFlagged: boolean('domain_risk_flagged').notNull().default(false),
   domainRiskAcknowledged: boolean('domain_risk_acknowledged').notNull().default(false),
   existingAppUrl: text('existing_app_url'),
+  levelNumber: integer('level_number').references(() => levels.levelNumber),
+  levelProjectNumber: integer('level_project_number'),
+  deployedUrl: text('deployed_url'),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => [
-  check('build_projects_path_check', sql`${table.path} IN ('from_scratch','agentify_existing')`),
+  check('build_projects_path_check', sql`${table.path} IN ('from_scratch','agentify_existing','level_project')`),
 ])
 
 // SQL name 'project_steps' — 'build_steps' is already taken by the session-based table above
@@ -153,7 +156,7 @@ export const agenticAudits = pgTable('agentic_audits', {
   check('agentic_audits_status_check', sql`${table.status} IN ('covered','partial','missing')`),
 ])
 
-// ── Levels + Checkpoints ──────────────────────────────────────────────────
+// ── Levels ────────────────────────────────────────────────────────────────
 
 export const levels = pgTable('levels', {
   levelNumber: integer('level_number').primaryKey(),
@@ -161,24 +164,19 @@ export const levels = pgTable('levels', {
   description: text('description').notNull(),
 })
 
-export const levelCheckpoints = pgTable('level_checkpoints', {
+export const levelProjectTemplates = pgTable('level_project_templates', {
   id: serial('id').primaryKey(),
   levelNumber: integer('level_number')
     .references(() => levels.levelNumber)
     .notNull(),
-  checkpointText: text('checkpoint_text').notNull(),
-  sortOrder: integer('sort_order').notNull(),
-})
-
-export const userCheckpointProgress = pgTable('user_checkpoint_progress', {
-  id: serial('id').primaryKey(),
-  userId: text('user_id').notNull(),
-  checkpointId: integer('checkpoint_id')
-    .references(() => levelCheckpoints.id)
-    .notNull(),
-  completedAt: timestamp('completed_at').defaultNow(),
+  projectNumber: integer('project_number').notNull(),
+  projectTitle: text('project_title').notNull(),
+  projectDescription: text('project_description').notNull(),
+  stepsJson: jsonb('steps_json').notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
 }, (table) => [
-  unique('user_checkpoint_unique').on(table.userId, table.checkpointId),
+  unique('level_project_templates_unique').on(table.levelNumber, table.projectNumber),
 ])
 
 // ── Generation Logs ───────────────────────────────────────────────────────

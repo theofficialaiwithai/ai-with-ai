@@ -30,6 +30,7 @@ export default async function BuildAiPage() {
   return (
     <BuildAiClient
       userName={displayName}
+      email={profile.email}
       currentLevel={currentLevel}
       projects={projects.map(p => ({
         id: p.id,

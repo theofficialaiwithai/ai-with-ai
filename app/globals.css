@@ -56,3 +56,47 @@ body::after {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* ── Retro OS design system ── */
+:root {
+  --retro-panel-dark: #241D42;
+  --retro-panel-raised: #2E2650;
+  --retro-window: #FFFFFF;
+  --retro-window-alt: #ECE9F5;
+  --retro-gold: #FFCB33;
+  --retro-blue: #5C7CFA;
+  --retro-lime: #5FD98A;
+  --retro-pink: #FF5FA8;
+  --retro-pink-soft: #FF9BD0;
+  --retro-violet: #9B7FD1;
+  --retro-ink: #1B1533;
+  --retro-ink-soft: #5A536F;
+  --retro-border: #000000;
+  --retro-border-soft: #3A3164;
+  --retro-text: #ECE9F5;
+  --retro-text-dim: #A79FC9;
+  --retro-text-faint: #6F6699;
+}
+
+.retro-page {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  background-image:
+    linear-gradient(180deg, #C9AEEA 0%, #9B7FD1 100%),
+    linear-gradient(rgba(70,50,110,0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70,50,110,0.14) 1px, transparent 1px);
+  background-size: 100% 100%, 40px 40px, 40px 40px;
+  padding-bottom: 96px;
+}
+
+@keyframes retro-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.retro-marquee-inner {
+  display: inline-block;
+  animation: retro-marquee 20s linear infinite;
+  white-space: nowrap;
+}

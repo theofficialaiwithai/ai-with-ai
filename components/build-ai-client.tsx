@@ -1,18 +1,26 @@
 'use client'
 
-import { useRouter, usePathname } from 'next/navigation'
-import { SignOutButton } from '@clerk/nextjs'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import RetroShell from '@/components/retro-os/retro-shell'
+import WindowCard, { RetroPill, RetroButton } from '@/components/retro-os/window-card'
+
+const BORDER = '#000000'
+const INK = '#1B1533'
+const INK_SOFT = '#5A536F'
+const GOLD = '#FFCB33'
+const PINK = '#FF5FA8'
+const PINK_SOFT = '#FF9BD0'
+const VIOLET = '#9B7FD1'
+const BLUE = '#5C7CFA'
+const BLUE_SOFT = '#8DA3FC'
+const LIME = '#5FD98A'
+const WINDOW = '#FFFFFF'
+const WINDOW_ALT = '#ECE9F5'
 
 const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
+const FV = "var(--font-vt323,'VT323'),monospace"
 const FB = "var(--font-inter,'Inter'),sans-serif"
-const FM = "var(--font-jetbrains-mono,'JetBrains Mono'),monospace"
-const FS = "var(--font-sora,'Sora'),sans-serif"
-
-const BG = '#0D0D1A'
-const SURFACE = '#1A1A2E'
-const BORDER = 'rgba(255,255,255,0.06)'
-const VIOLET = '#7C3AED'
 
 interface Project {
   id: number
@@ -24,243 +32,196 @@ interface Project {
 
 interface Props {
   userName: string
+  email: string
   currentLevel: number
   projects: Project[]
 }
 
-const PATH_LABELS: Record<string, string> = {
-  from_scratch: 'From Scratch',
-  agentify_existing: 'Enhance Existing Build',
+function deriveFilename(title: string): string {
+  const word = title.trim().split(/[\s—–\-]/)[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+  return `${word || 'project'}.prd`
 }
 
-const STATUS_STYLES: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  discovery:  { label: 'Discovery',  color: '#F59E0B', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.25)' },
-  planning:   { label: 'Planning',   color: '#9D5AF0', bg: 'rgba(124,58,237,0.1)', border: 'rgba(124,58,237,0.25)' },
-  building:   { label: 'Building',   color: '#9D5AF0', bg: 'rgba(124,58,237,0.1)', border: 'rgba(124,58,237,0.25)' },
-  complete:   { label: 'Complete',   color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
+function barGradient(path: string): string {
+  if (path === 'from_scratch') return `linear-gradient(90deg, ${GOLD} 0%, #FFE08A 100%)`
+  if (path === 'agentify_existing') return `linear-gradient(90deg, ${PINK} 0%, ${PINK_SOFT} 100%)`
+  if (path === 'level_project') return `linear-gradient(90deg, ${BLUE} 0%, ${BLUE_SOFT} 100%)`
+  return `linear-gradient(90deg, ${VIOLET} 0%, #C4AEED 100%)`
+}
+
+function barColor(path: string): string {
+  if (path === 'from_scratch') return GOLD
+  if (path === 'agentify_existing') return PINK
+  if (path === 'level_project') return BLUE
+  return VIOLET
+}
+
+const PATH_LABELS: Record<string, string> = {
+  from_scratch: 'FROM SCRATCH',
+  agentify_existing: 'ENHANCE EXISTING BUILD',
+  level_project: 'LEVEL PROJECT',
+}
+
+function statusTag(status: string): { label: string; bg: string; color: string } {
+  if (status === 'building') return { label: 'BUILDING', bg: PINK, color: '#fff' }
+  if (status === 'complete') return { label: 'COMPLETE', bg: LIME, color: INK }
+  if (['reviewing_sections', 'prd_generated'].includes(status)) return { label: 'PRD_GENERATED', bg: WINDOW_ALT, color: INK_SOFT }
+  return { label: status.toUpperCase().replace(/_/g, '_'), bg: WINDOW_ALT, color: INK_SOFT }
 }
 
 function formatDate(iso: string) {
   const d = new Date(iso)
-  const now = Date.now()
-  const diff = now - d.getTime()
+  const diff = Date.now() - d.getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 60) return `${mins}m ago`
   const hrs = Math.floor(mins / 60)
   if (hrs < 24) return `${hrs}h ago`
   const days = Math.floor(hrs / 24)
   if (days < 7) return `${days}d ago`
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
-function StatusPill({ status }: { status: string }) {
-  const s = STATUS_STYLES[status] ?? { label: status, color: '#94A3B8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }
-  return (
-    <span style={{
-      fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-      textTransform: 'uppercase', display: 'inline-block',
-      color: s.color, background: s.bg, border: `1px solid ${s.border}`,
-      borderRadius: 4, padding: '2px 8px',
-    }}>
-      {s.label}
-    </span>
-  )
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function ProjectCard({ project }: { project: Project }) {
   const router = useRouter()
+  const filename = deriveFilename(project.title)
+  const gradient = barGradient(project.path)
+  const tag = statusTag(project.status)
+  const pathLabel = PATH_LABELS[project.path] ?? project.path.toUpperCase()
+
   return (
-    <div
+    <WindowCard
+      bar={{ gradient, label: filename }}
+      hoverable
       onClick={() => router.push(`/build-ai/project/${project.id}`)}
-      style={{
-        background: SURFACE, border: `1px solid ${BORDER}`,
-        borderRadius: 14, padding: '22px 24px',
-        cursor: 'pointer', transition: 'border-color 0.2s, box-shadow 0.2s',
-        display: 'flex', flexDirection: 'column', gap: 12,
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'rgba(124,58,237,0.35)'
-        e.currentTarget.style.boxShadow = '0 4px 24px rgba(124,58,237,0.08)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = BORDER
-        e.currentTarget.style.boxShadow = 'none'
-      }}
     >
-      {/* Path tag */}
-      <span style={{
-        fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-        textTransform: 'uppercase', display: 'inline-block',
-        color: '#94A3B8', background: 'rgba(255,255,255,0.04)',
-        border: `1px solid ${BORDER}`, borderRadius: 4, padding: '2px 8px',
-        alignSelf: 'flex-start',
-      }}>
-        {PATH_LABELS[project.path] ?? project.path}
-      </span>
-
-      {/* Title */}
-      <div style={{ fontFamily: FD, fontSize: 16, fontWeight: 600, color: '#F8FAFC', lineHeight: 1.35 }}>
-        {project.title}
+      <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <RetroPill>{pathLabel}</RetroPill>
+        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: INK, lineHeight: 1.35 }}>
+          {project.title}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+          <span style={{
+            fontFamily: FV, fontSize: 13, fontWeight: 700,
+            background: tag.bg, color: tag.color,
+            border: `1.5px solid ${BORDER}`, borderRadius: 100,
+            padding: '3px 11px', display: 'inline-block',
+          }}>{tag.label}</span>
+          <span style={{ fontFamily: FV, fontSize: 13, color: INK_SOFT }}>
+            Updated {formatDate(project.updatedAt)}
+          </span>
+        </div>
       </div>
-
-      {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
-        <StatusPill status={project.status} />
-        <span style={{ fontFamily: FM, fontSize: 11, color: '#4A5568' }}>
-          Updated {formatDate(project.updatedAt)}
-        </span>
-      </div>
-    </div>
+    </WindowCard>
   )
 }
 
-export default function BuildAiClient({ userName, currentLevel, projects }: Props) {
+export default function BuildAiClient({ userName, email, currentLevel, projects }: Props) {
   const router = useRouter()
-  const pathname = usePathname()
+
+  const totalProjects = projects.length
+  const buildingCount = projects.filter(p => p.status === 'building').length
+  const prdCount = projects.filter(p => ['reviewing_sections', 'prd_generated'].includes(p.status)).length
+
+  // Build taskbar tabs from 2 most recent projects + dashboard
+  const taskbarTabs = [
+    ...projects.slice(0, 2).map(p => ({
+      filename: deriveFilename(p.title),
+      color: barColor(p.path),
+    })),
+    { filename: 'dashboard', color: BLUE },
+  ]
+
+  const stats = [
+    { n: totalProjects, l: 'Projects' },
+    { n: buildingCount, l: 'Building' },
+    { n: prdCount, l: 'PRD Generated' },
+    { n: currentLevel, l: 'Level Reached' },
+  ]
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
-
-      {/* ── NAV ── */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50, height: 56,
-        background: 'rgba(13,13,26,0.85)', backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${BORDER}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 28px',
-      }}>
-        {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 22, height: 22, borderRadius: 6, background: VIOLET,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, color: '#fff', fontWeight: 700, flexShrink: 0,
-          }}>▸</div>
-          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 15, color: '#F8FAFC' }}>AI with AI</span>
-        </div>
-
-        {/* Section tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {[
-            { label: 'Dashboard', href: '/dashboard' },
-            { label: 'Build AI with AI', href: '/build-ai' },
-          ].map(({ label, href }) => {
-            const active = pathname === href
-            return (
-              <button
-                key={href}
-                onClick={() => router.push(href)}
-                style={{
-                  background: active ? 'rgba(124,58,237,0.12)' : 'none',
-                  border: active ? '1px solid rgba(124,58,237,0.3)' : '1px solid transparent',
-                  borderRadius: 7, padding: '5px 14px',
-                  fontFamily: FD, fontWeight: active ? 600 : 500, fontSize: 13,
-                  color: active ? '#C4B5FD' : '#94A3B8',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#F8FAFC' }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#94A3B8' }}
-              >
-                {label}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* User + sign out */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontFamily: FB, fontSize: 13, color: '#94A3B8' }}>{userName}</span>
-          <SignOutButton>
-            <button style={{
-              background: 'none', border: `1px solid rgba(255,255,255,0.08)`,
-              borderRadius: 7, padding: '5px 12px',
-              fontFamily: FB, fontSize: 12, color: '#94A3B8', cursor: 'pointer',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#F8FAFC'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
-            >
-              Log out
-            </button>
-          </SignOutButton>
-        </div>
-      </nav>
-
-      {/* ── CONTENT ── */}
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 24px 80px' }}>
+    <RetroShell email={email} activePath="build-ai" taskbarTabs={taskbarTabs}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 32px 0' }}>
 
         {/* Page header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <h1 style={{
-              fontFamily: FS, fontWeight: 700, fontSize: 28,
-              color: VIOLET, margin: 0, letterSpacing: '-0.01em',
-            }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 26, flexWrap: 'wrap', gap: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <h1 style={{ fontFamily: FD, fontWeight: 800, fontSize: 30, color: INK, margin: 0 }}>
               Build AI with AI
             </h1>
-            {/* Level badge */}
             <Link href="/build-ai/levels" style={{ textDecoration: 'none' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.25)',
-                borderRadius: 20, padding: '4px 12px', cursor: 'pointer',
-                transition: 'border-color 0.15s',
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 100,
+                padding: '6px 14px', fontFamily: FV, fontSize: 15, color: INK_SOFT,
+                boxShadow: `2px 2px 0 ${BORDER}`, cursor: 'pointer',
               }}>
-                <span style={{ fontFamily: FM, fontSize: 10, color: '#9D5AF0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Level</span>
-                <span style={{ fontFamily: FS, fontSize: 14, fontWeight: 700, color: '#C4B5FD' }}>{currentLevel}</span>
-              </div>
+                LEVEL{' '}
+                <span style={{
+                  background: BLUE, color: '#fff', fontFamily: FD,
+                  fontWeight: 700, fontSize: 12, padding: '1px 9px', borderRadius: 100,
+                }}>{currentLevel}</span>
+              </span>
             </Link>
           </div>
-
-          <button
-            onClick={() => router.push('/build-ai/new')}
-            style={{
-              background: VIOLET, color: '#fff', border: 'none',
-              borderRadius: 10, padding: '10px 22px',
-              fontFamily: FD, fontWeight: 600, fontSize: 14,
-              cursor: 'pointer', transition: 'opacity 0.15s',
-              boxShadow: '0 4px 16px rgba(124,58,237,0.3)',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-          >
+          <RetroButton variant="primary" onClick={() => router.push('/build-ai/new')}>
             + New Project
-          </button>
+          </RetroButton>
         </div>
 
-        {/* Projects grid or empty state */}
-        {projects.length === 0 ? (
+        {/* Stats WindowCard */}
+        <WindowCard
+          infoBar="SYSTEM PROPERTIES — BUILD_STATS.LOG"
+          style={{ marginBottom: 22 }}
+          borderRadius={16}
+        >
           <div style={{
-            textAlign: 'center', padding: '80px 24px',
-            background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 20,
+            background: WINDOW_ALT,
+            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, padding: 20,
           }}>
+            {stats.map(s => (
+              <div key={s.l} style={{
+                background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 12,
+                padding: '20px 12px', textAlign: 'center',
+              }}>
+                <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 32, color: BLUE, lineHeight: 1 }}>{s.n}</div>
+                <div style={{ fontSize: 11, color: INK_SOFT, textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: 8, fontWeight: 600, fontFamily: FB }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+        </WindowCard>
+
+        {/* Projects section */}
+        {projects.length === 0 ? (
+          <WindowCard borderRadius={16} bodyStyle={{ padding: '80px 24px', textAlign: 'center', background: WINDOW_ALT }}>
             <div style={{ fontSize: 40, marginBottom: 20 }}>🛠️</div>
-            <h2 style={{ fontFamily: FS, fontSize: 20, fontWeight: 600, color: '#F8FAFC', margin: '0 0 10px' }}>
+            <h2 style={{ fontFamily: FD, fontSize: 20, fontWeight: 700, color: INK, margin: '0 0 10px' }}>
               No projects yet
             </h2>
-            <p style={{ fontFamily: FB, fontSize: 14, color: '#94A3B8', maxWidth: 380, margin: '0 auto 28px', lineHeight: 1.7 }}>
+            <p style={{ fontFamily: FB, fontSize: 14, color: INK_SOFT, maxWidth: 380, margin: '0 auto 28px', lineHeight: 1.7 }}>
               Start your first agentic build — from scratch or by enhancing an existing tool.
             </p>
-            <button
-              onClick={() => router.push('/build-ai/new')}
-              style={{
-                background: VIOLET, color: '#fff', border: 'none',
-                borderRadius: 10, padding: '12px 28px',
-                fontFamily: FD, fontWeight: 600, fontSize: 15,
-                cursor: 'pointer', boxShadow: '0 4px 20px rgba(124,58,237,0.35)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-            >
+            <RetroButton variant="primary" onClick={() => router.push('/build-ai/new')}>
               + New Project
-            </button>
-          </div>
+            </RetroButton>
+          </WindowCard>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18 }}>
-            {projects.map(p => <ProjectCard key={p.id} project={p} />)}
-          </div>
+          <>
+            <div style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14,
+            }}>
+              <span style={{ fontFamily: FV, fontSize: 16, color: INK, fontWeight: 700, letterSpacing: '0.04em' }}>
+                &gt; PROJECTS.SYS — {totalProjects} file{totalProjects !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 18 }}>
+              {projects.map(p => <ProjectCard key={p.id} project={p} />)}
+            </div>
+          </>
         )}
       </div>
-    </div>
+    </RetroShell>
   )
 }

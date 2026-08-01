@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono, Sora } from "next/font/google";
+import { Space_Grotesk, Inter, JetBrains_Mono, Sora, VT323 } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import Nav from "@/components/nav";
 import "./globals.css";
@@ -29,6 +29,12 @@ const sora = Sora({
   variable: "--font-sora",
 });
 
+const vt323 = VT323({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-vt323",
+});
+
 export const metadata: Metadata = {
   title: "AI with AI",
   description: "Build AI apps with AI guidance",
@@ -42,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} ${sora.variable}`}
+      className={`dark ${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} ${sora.variable} ${vt323.variable}`}
     >
       <head>
         <link

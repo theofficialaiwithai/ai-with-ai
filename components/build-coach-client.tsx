@@ -20,6 +20,7 @@ interface Step {
   stepName: string
   promptText: string
   verifyChecklist: string[]
+  checkedItems: boolean[]
 }
 
 interface Props {
@@ -49,6 +50,9 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   const [marking, setMarking] = useState(false)
   const [markError, setMarkError] = useState<string | null>(null)
   const [completionLevel, setCompletionLevel] = useState<number | null>(null)
+  const [checkedItems, setCheckedItems] = useState<boolean[]>(
+    props.allComplete ? [] : (props.step.checkedItems ?? [])
+  )
 
   if (props.allComplete) {
     return (
@@ -65,6 +69,33 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
 
   const { projectId, projectTitle, step, currentStepNumber, totalSteps } = props
   const progressPct = Math.round(((currentStepNumber - 1) / totalSteps) * 100)
+
+  const checklistLen = step.verifyChecklist.length
+  const allItemsChecked = checklistLen === 0 || (
+    checkedItems.length === checklistLen && checkedItems.every(v => v === true)
+  )
+  const canMarkDone = allItemsChecked && !marking && !isPending
+
+  async function handleToggleItem(index: number, checked: boolean) {
+    // Optimistic update
+    setCheckedItems(prev => {
+      const next = step.verifyChecklist.map((_, i) => (i === index ? checked : (prev[i] ?? false)))
+      return next
+    })
+    try {
+      const res = await fetch(`/api/build-ai/steps/${step.id}/check-item`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemIndex: index, checked }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setCheckedItems(data.checkedItems)
+      }
+    } catch {
+      // keep optimistic state; non-critical
+    }
+  }
 
   async function handleCopy() {
     try {
@@ -196,11 +227,12 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
           </pre>
         </div>
 
-        {/* Verify checklist */}
+        {/* Verify checklist — required checkboxes */}
         {step.verifyChecklist.length > 0 && (
           <div style={{
-            background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: '20px 22px', marginBottom: 32,
+            background: SURFACE, border: `1px solid ${allItemsChecked ? 'rgba(16,185,129,0.25)' : BORDER}`,
+            borderRadius: 16, padding: '20px 22px', marginBottom: 16,
+            transition: 'border-color 0.2s',
           }}>
             <p style={{
               fontFamily: FM, fontSize: 10, fontWeight: 600, color: '#64748B',
@@ -210,40 +242,81 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
               Before marking done, verify:
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {step.verifyChecklist.map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                  <span style={{
-                    flexShrink: 0, width: 18, height: 18, marginTop: 1,
-                    border: `1.5px solid rgba(124,58,237,0.4)`, borderRadius: 4,
-                    background: 'rgba(124,58,237,0.06)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <span style={{ width: 6, height: 6, borderRadius: 1, background: 'rgba(124,58,237,0.3)' }} />
-                  </span>
-                  <span style={{ fontFamily: FB, fontSize: 13.5, color: '#94A3B8', lineHeight: 1.6 }}>
-                    {item}
-                  </span>
-                </div>
-              ))}
+              {step.verifyChecklist.map((item, i) => {
+                const isChecked = checkedItems[i] === true
+                return (
+                  <label
+                    key={i}
+                    style={{
+                      display: 'flex', alignItems: 'flex-start', gap: 10,
+                      cursor: 'pointer', userSelect: 'none',
+                    }}
+                  >
+                    <span
+                      role="checkbox"
+                      aria-checked={isChecked}
+                      onClick={() => handleToggleItem(i, !isChecked)}
+                      style={{
+                        flexShrink: 0, width: 18, height: 18, marginTop: 2,
+                        border: `1.5px solid ${isChecked ? '#10B981' : 'rgba(124,58,237,0.4)'}`,
+                        borderRadius: 4,
+                        background: isChecked ? 'rgba(16,185,129,0.15)' : 'rgba(124,58,237,0.06)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.15s',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {isChecked && (
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                          <path d="M2 5.5l2.5 2.5 4.5-5" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </span>
+                    <span
+                      onClick={() => handleToggleItem(i, !isChecked)}
+                      style={{
+                        fontFamily: FB, fontSize: 13.5, lineHeight: 1.6,
+                        color: isChecked ? '#64748B' : '#94A3B8',
+                        textDecoration: isChecked ? 'line-through' : 'none',
+                        transition: 'color 0.15s',
+                      }}
+                    >
+                      {item}
+                    </span>
+                  </label>
+                )
+              })}
             </div>
           </div>
+        )}
+
+        {/* Helper hint when checklist incomplete */}
+        {!allItemsChecked && step.verifyChecklist.length > 0 && (
+          <p style={{
+            fontFamily: FB, fontSize: 12, color: '#4B5563',
+            margin: '0 0 16px', textAlign: 'center',
+          }}>
+            Check off each item to continue
+          </p>
         )}
 
         {markError && (
           <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12 }}>✗ {markError}</p>
         )}
         <button
-          onClick={handleMarkDone}
-          disabled={marking || isPending}
+          onClick={canMarkDone ? handleMarkDone : undefined}
+          disabled={!canMarkDone}
           style={{
             width: '100%',
-            background: (marking || isPending) ? 'rgba(124,58,237,0.45)' : VIOLET,
-            color: '#fff', border: 'none', borderRadius: 12,
+            background: !canMarkDone ? 'rgba(255,255,255,0.05)' : VIOLET,
+            color: !canMarkDone ? '#374151' : '#fff',
+            border: `1px solid ${!canMarkDone ? 'rgba(255,255,255,0.06)' : 'transparent'}`,
+            borderRadius: 12,
             padding: '15px 0',
             fontFamily: FD, fontWeight: 700, fontSize: 16,
-            cursor: (marking || isPending) ? 'not-allowed' : 'pointer',
-            boxShadow: (marking || isPending) ? 'none' : '0 4px 24px rgba(124,58,237,0.4)',
-            transition: 'background 0.15s',
+            cursor: !canMarkDone ? 'not-allowed' : 'pointer',
+            boxShadow: !canMarkDone ? 'none' : '0 4px 24px rgba(124,58,237,0.4)',
+            transition: 'all 0.2s',
             letterSpacing: '-0.01em',
           }}
         >

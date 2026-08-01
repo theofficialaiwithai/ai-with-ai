@@ -139,6 +139,7 @@ export const projectSteps = pgTable('project_steps', {
   stepName: text('step_name').notNull(),
   promptText: text('prompt_text').notNull(),
   verifyChecklist: jsonb('verify_checklist').notNull(),
+  checkedItems: jsonb('checked_items').notNull().default([]),
   isComplete: boolean('is_complete').default(false),
   completedAt: timestamp('completed_at'),
 })

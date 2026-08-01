@@ -60,6 +60,7 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
         stepName: currentStep.stepName,
         promptText: currentStep.promptText,
         verifyChecklist: (currentStep.verifyChecklist as string[]) ?? [],
+        checkedItems: (currentStep.checkedItems as boolean[]) ?? [],
       }}
       currentStepNumber={currentStep.stepNumber}
       totalSteps={steps.length}

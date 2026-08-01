@@ -16,7 +16,6 @@ export async function POST(
   const stepId = parseInt(id, 10)
   if (isNaN(stepId)) return NextResponse.json({ error: 'Invalid step ID' }, { status: 400 })
 
-  // Fetch the step and verify the project belongs to this user
   const [step] = await db
     .select()
     .from(projectSteps)
@@ -31,6 +30,20 @@ export async function POST(
     .where(and(eq(buildProjects.id, step.projectId), eq(buildProjects.userId, userId)))
 
   if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+
+  // Enforce: all checklist items must be checked before completing
+  const checklist = (step.verifyChecklist as string[]) ?? []
+  if (checklist.length > 0) {
+    const checked = Array.isArray(step.checkedItems) ? (step.checkedItems as boolean[]) : []
+    const allChecked =
+      checked.length === checklist.length && checked.every(v => v === true)
+    if (!allChecked) {
+      return NextResponse.json(
+        { error: 'All verification checklist items must be checked before completing this step.' },
+        { status: 400 }
+      )
+    }
+  }
 
   // Mark step complete
   await db

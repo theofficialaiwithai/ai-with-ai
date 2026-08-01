@@ -163,6 +163,14 @@ Rules:
       parsedSections[0].content = banner + parsedSections[0].content
     }
 
+    // Note non-Claude Code prompt format in build order section
+    if (buildTool !== 'claude_code') {
+      const buildOrderSection = parsedSections.find(s => s.name === 'MVP Build Order')
+      if (buildOrderSection) {
+        buildOrderSection.content += `\n\n> **Note:** ${toolLabel}-specific prompt formatting is coming soon — these steps are written in Claude Code prompt format for now and may need adjusting.`
+      }
+    }
+
     const title = deriveTitle(ideaDescription)
     console.log('[generate-prd] derived title:', title)
 

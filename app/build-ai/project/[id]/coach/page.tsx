@@ -37,6 +37,15 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
     ? `/build-ai/levels/${project.levelNumber}`
     : null
 
+  const BUILD_TOOL_LABEL: Record<string, string> = {
+    cursor: 'Cursor',
+    replit: 'Replit',
+    lovable: 'Lovable',
+  }
+  const buildToolBanner = project.buildTool !== 'claude_code'
+    ? `Heads up — prompts are currently formatted for Claude Code. ${BUILD_TOOL_LABEL[project.buildTool] ?? project.buildTool} support is coming soon.`
+    : null
+
   // Nudge card: only on step 1 of a non-level build
   let curriculumNudge: CurriculumNudge | null = null
   if (!allComplete && currentStep.stepNumber === 1 && !isLevelProject) {
@@ -52,6 +61,7 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
         totalSteps={steps.length}
         isLevelProject={isLevelProject}
         levelBackLink={levelBackLink}
+        buildToolBanner={buildToolBanner}
       />
     )
   }
@@ -86,6 +96,7 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
       isLevelProject={isLevelProject}
       levelBackLink={levelBackLink}
       curriculumNudge={curriculumNudge}
+      buildToolBanner={buildToolBanner}
     />
   )
 }

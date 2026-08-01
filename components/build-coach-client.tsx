@@ -35,6 +35,7 @@ interface Props {
   isLevelProject?: boolean
   levelBackLink?: string | null
   curriculumNudge?: CurriculumNudge | null
+  buildToolBanner?: string | null
 }
 
 interface CompleteProps {
@@ -44,6 +45,7 @@ interface CompleteProps {
   allComplete: true
   isLevelProject?: boolean
   levelBackLink?: string | null
+  buildToolBanner?: string | null
 }
 
 export default function BuildCoachClient(props: Props | CompleteProps) {
@@ -59,6 +61,7 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   const [viewingStepNumber, setViewingStepNumber] = useState<number>(
     props.allComplete ? 0 : props.currentStepNumber
   )
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   if (props.allComplete) {
     return (
@@ -69,11 +72,14 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
         isLevelProject={props.isLevelProject}
         levelBackLink={props.levelBackLink}
         newLevel={completionLevel}
+        buildToolBanner={props.buildToolBanner}
+        bannerDismissed={bannerDismissed}
+        onDismissBanner={() => setBannerDismissed(true)}
       />
     )
   }
 
-  const { projectId, projectTitle, step, completedSteps, currentStepNumber, totalSteps, curriculumNudge } = props
+  const { projectId, projectTitle, step, completedSteps, currentStepNumber, totalSteps, curriculumNudge, buildToolBanner } = props
 
   const isViewingPastStep = viewingStepNumber < currentStepNumber
   const viewingStep: Step = isViewingPastStep
@@ -163,6 +169,29 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
           transition: 'width 0.5s ease',
         }} />
       </div>
+
+      {/* Build-tool compatibility banner */}
+      {buildToolBanner && !bannerDismissed && (
+        <div style={{
+          background: 'rgba(251,191,36,0.08)', borderBottom: '1px solid rgba(251,191,36,0.2)',
+          padding: '8px 28px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontFamily: FB, fontSize: 12, color: '#FCD34D', lineHeight: 1.5 }}>
+            {buildToolBanner}
+          </span>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#92400E', fontSize: 16, lineHeight: 1, padding: '0 2px', flexShrink: 0,
+            }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Nav */}
       <nav style={{
@@ -541,6 +570,9 @@ function CompletionScreen({
   isLevelProject,
   levelBackLink,
   newLevel,
+  buildToolBanner,
+  bannerDismissed,
+  onDismissBanner,
 }: {
   projectId: number
   projectTitle: string
@@ -548,11 +580,35 @@ function CompletionScreen({
   isLevelProject?: boolean
   levelBackLink?: string | null
   newLevel?: number | null
+  buildToolBanner?: string | null
+  bannerDismissed?: boolean
+  onDismissBanner?: () => void
 }) {
   const leveledUp = isLevelProject && newLevel != null
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC', display: 'flex', flexDirection: 'column' }}>
+      {buildToolBanner && !bannerDismissed && (
+        <div style={{
+          background: 'rgba(251,191,36,0.08)', borderBottom: '1px solid rgba(251,191,36,0.2)',
+          padding: '8px 28px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <span style={{ fontFamily: FB, fontSize: 12, color: '#FCD34D', lineHeight: 1.5 }}>
+            {buildToolBanner}
+          </span>
+          <button
+            onClick={onDismissBanner}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#92400E', fontSize: 16, lineHeight: 1, padding: '0 2px', flexShrink: 0,
+            }}
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <nav style={{
         height: 56, background: 'rgba(15,15,20,0.9)', backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${BORDER}`,

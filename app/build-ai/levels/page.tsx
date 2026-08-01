@@ -1,10 +1,10 @@
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { levels, levelProjectTemplates, buildProjects } from '@/db/schema'
+import { profiles, levels, levelProjectTemplates, buildProjects } from '@/db/schema'
 import { eq, and, asc } from 'drizzle-orm'
-import { getCurrentLevel, levelBandColor } from '@/lib/leveling'
-import Link from 'next/link'
+import { getCurrentLevel } from '@/lib/leveling'
+import LevelsClient, { type LevelItem } from '@/components/levels-client'
 
 const LEVEL_SHORT: Record<number, string> = {
   0: 'First contact',
@@ -24,7 +24,7 @@ export default async function LevelsPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
 
-  const [allLevels, templates, completedProjects, currentLevel] = await Promise.all([
+  const [allLevels, templates, completedProjects, currentLevel, profile] = await Promise.all([
     db.select().from(levels).orderBy(asc(levels.levelNumber)),
     db.select({ levelNumber: levelProjectTemplates.levelNumber, projectNumber: levelProjectTemplates.projectNumber })
       .from(levelProjectTemplates),
@@ -36,9 +36,9 @@ export default async function LevelsPage() {
         eq(buildProjects.status, 'complete'),
       )),
     getCurrentLevel(userId),
+    db.query.profiles.findFirst({ where: eq(profiles.id, userId) }),
   ])
 
-  // Build per-level template count and completion count
   const templatesByLevel = new Map<number, number>()
   for (const t of templates) {
     templatesByLevel.set(t.levelNumber, (templatesByLevel.get(t.levelNumber) ?? 0) + 1)
@@ -51,157 +51,22 @@ export default async function LevelsPage() {
     }
   }
 
-  const BG = '#0F0F14'
-  const BORDER = 'rgba(255,255,255,0.06)'
-  const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
-  const FB = "var(--font-inter,'Inter'),sans-serif"
-  const FM = "var(--font-jetbrains-mono,'JetBrains Mono'),monospace"
-  const FS = "var(--font-sora,'Sora'),sans-serif"
-
+  // Reverse order so highest level is at top (like the prototype)
   const ordered = [...allLevels].reverse()
 
+  const levelItems: LevelItem[] = ordered.map(l => ({
+    levelNumber: l.levelNumber,
+    name: l.name,
+    shortName: LEVEL_SHORT[l.levelNumber] ?? l.name,
+    done: doneByLevel.get(l.levelNumber) ?? 0,
+    total: templatesByLevel.get(l.levelNumber) ?? 0,
+  }))
+
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
-      <nav style={{
-        height: 56, background: 'rgba(15,15,20,0.9)', backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${BORDER}`,
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '0 28px',
-      }}>
-        <Link
-          href="/build-ai"
-          style={{ fontFamily: FD, fontWeight: 600, fontSize: 13, color: '#94A3B8', textDecoration: 'none' }}
-        >
-          ← Dashboard
-        </Link>
-        <span style={{ color: '#374151', fontSize: 11 }}>/</span>
-        <span style={{ fontFamily: FD, fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>Level Map</span>
-      </nav>
-
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '56px 24px 100px' }}>
-        <div style={{ marginBottom: 48 }}>
-          <h1 style={{
-            fontFamily: FS, fontSize: 28, fontWeight: 700,
-            color: '#F8FAFC', margin: '0 0 10px', letterSpacing: '-0.02em',
-          }}>
-            Level Map
-          </h1>
-          <p style={{ fontFamily: FB, fontSize: 14, color: '#64748B', margin: 0, lineHeight: 1.6 }}>
-            Complete all mini-projects at each level to advance. You&apos;re currently at{' '}
-            <span style={{ color: '#F8FAFC', fontWeight: 600 }}>Level {currentLevel}</span>.
-          </p>
-        </div>
-
-        <div style={{ position: 'relative' }}>
-          {/* Connector line */}
-          <div style={{
-            position: 'absolute', left: 23, top: 24, bottom: 24, width: 2,
-            background: 'linear-gradient(to bottom, rgba(203,255,77,0.3), rgba(255,79,112,0.3), rgba(124,58,237,0.3), rgba(19,97,227,0.3))',
-            zIndex: 0,
-          }} />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {ordered.map((level) => {
-              const n = level.levelNumber
-              const color = levelBandColor(n)
-              const isCurrentLevel = n === currentLevel
-              const isComplete = n < currentLevel
-              const shortName = LEVEL_SHORT[n] ?? level.name
-              const total = templatesByLevel.get(n) ?? 0
-              const done = doneByLevel.get(n) ?? 0
-
-              return (
-                <Link
-                  key={n}
-                  href={`/build-ai/levels/${n}`}
-                  style={{ textDecoration: 'none', display: 'block', position: 'relative', zIndex: 1 }}
-                >
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 16,
-                    padding: '14px 20px 14px 0',
-                    background: isCurrentLevel ? `${color}12` : 'transparent',
-                    borderRadius: isCurrentLevel ? 12 : 0,
-                    border: isCurrentLevel ? `1px solid ${color}35` : '1px solid transparent',
-                    marginBottom: 4,
-                  }}>
-                    {/* Circle node */}
-                    <div style={{
-                      width: 48, height: 48, flexShrink: 0,
-                      borderRadius: '50%',
-                      background: isComplete ? color : isCurrentLevel ? `${color}25` : '#1A1A24',
-                      border: `2px solid ${isComplete ? color : isCurrentLevel ? color : 'rgba(255,255,255,0.1)'}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: isCurrentLevel ? `0 0 20px ${color}50` : 'none',
-                    }}>
-                      {isComplete ? (
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                          <path d="M4 9l4 4 6-7" stroke={n === 10 ? '#000' : '#fff'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      ) : (
-                        <span style={{ fontFamily: FM, fontSize: 13, fontWeight: 700, color: isCurrentLevel ? color : '#4B5563' }}>
-                          {n}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                        <span style={{
-                          fontFamily: FM, fontSize: 10, fontWeight: 700,
-                          color, letterSpacing: '0.07em', textTransform: 'uppercase',
-                        }}>
-                          Level {n}
-                        </span>
-                        {isCurrentLevel && (
-                          <span style={{
-                            fontFamily: FB, fontSize: 10, fontWeight: 600,
-                            color, background: `${color}20`,
-                            borderRadius: 6, padding: '1px 7px',
-                          }}>
-                            current
-                          </span>
-                        )}
-                        {isComplete && (
-                          <span style={{
-                            fontFamily: FB, fontSize: 10, fontWeight: 600,
-                            color: '#10B981', background: 'rgba(16,185,129,0.12)',
-                            borderRadius: 6, padding: '1px 7px',
-                          }}>
-                            complete
-                          </span>
-                        )}
-                      </div>
-                      <div style={{
-                        fontFamily: FD, fontSize: 14, fontWeight: 600,
-                        color: isCurrentLevel ? '#F8FAFC' : isComplete ? '#94A3B8' : '#64748B',
-                        letterSpacing: '-0.01em',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        marginBottom: total > 0 ? 3 : 0,
-                      }}>
-                        {shortName}
-                      </div>
-                      {total > 0 && (
-                        <span style={{
-                          fontFamily: FM, fontSize: 10,
-                          color: done === total ? '#10B981' : isCurrentLevel ? color : '#4B5563',
-                        }}>
-                          {done}/{total} projects complete
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Chevron */}
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0, opacity: 0.35 }}>
-                      <path d="M6 4l4 4-4 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
+    <LevelsClient
+      email={profile?.email}
+      currentLevel={currentLevel}
+      levelItems={levelItems}
+    />
   )
 }

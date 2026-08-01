@@ -4,16 +4,23 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import RetroShell from '@/components/retro-os/retro-shell'
+import WindowCard, { RetroButton } from '@/components/retro-os/window-card'
+
+const BORDER = '#000000'
+const INK = '#1B1533'
+const INK_SOFT = '#5A536F'
+const GOLD = '#FFCB33'
+const PINK = '#FF5FA8'
+const BLUE = '#5C7CFA'
+const VIOLET = '#9B7FD1'
+const WINDOW = '#FFFFFF'
+const WINDOW_ALT = '#ECE9F5'
 
 const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
+const FV = "var(--font-vt323,'VT323'),monospace"
 const FB = "var(--font-inter,'Inter'),sans-serif"
 const FM = "var(--font-jetbrains-mono,'JetBrains Mono'),monospace"
-const FS = "var(--font-sora,'Sora'),sans-serif"
-
-const BG = '#0D0D1A'
-const SURFACE = '#1A1A2E'
-const BORDER = 'rgba(255,255,255,0.06)'
-const VIOLET = '#7C3AED'
 
 interface Section {
   id: number
@@ -32,37 +39,37 @@ interface Props {
 
 const mdComponents: React.ComponentProps<typeof ReactMarkdown>['components'] = {
   h1: ({ children }) => (
-    <h1 style={{ fontFamily: FS, fontSize: 20, fontWeight: 700, color: '#F8FAFC', margin: '24px 0 10px' }}>{children}</h1>
+    <h1 style={{ fontFamily: FD, fontSize: 18, fontWeight: 800, color: INK, marginTop: 0, marginBottom: 12, paddingBottom: 8, borderBottom: `1.5px solid ${WINDOW_ALT}` }}>{children}</h1>
   ),
   h2: ({ children }) => (
-    <h2 style={{ fontFamily: FD, fontSize: 17, fontWeight: 700, color: '#F8FAFC', margin: '20px 0 8px' }}>{children}</h2>
+    <h2 style={{ fontFamily: FD, fontSize: 15, fontWeight: 700, color: INK, marginTop: 22, marginBottom: 8 }}>{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 style={{ fontFamily: FD, fontSize: 15, fontWeight: 600, color: '#E2E8F0', margin: '16px 0 6px' }}>{children}</h3>
+    <h3 style={{ fontFamily: FD, fontSize: 13.5, fontWeight: 700, color: INK, marginTop: 16, marginBottom: 6 }}>{children}</h3>
   ),
   p: ({ children }) => (
-    <p style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, margin: '0 0 14px' }}>{children}</p>
+    <p style={{ fontFamily: FB, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.7, margin: '0 0 12px' }}>{children}</p>
   ),
   ul: ({ children }) => (
-    <ul style={{ margin: '0 0 14px', paddingLeft: 22, color: '#CBD5E1' }}>{children}</ul>
+    <ul style={{ margin: '0 0 12px', paddingLeft: 20, color: INK_SOFT }}>{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol style={{ margin: '0 0 14px', paddingLeft: 22, color: '#CBD5E1' }}>{children}</ol>
+    <ol style={{ margin: '0 0 12px', paddingLeft: 20, color: INK_SOFT }}>{children}</ol>
   ),
   li: ({ children }) => (
-    <li style={{ fontFamily: FB, fontSize: 14, lineHeight: 1.75, marginBottom: 4 }}>{children}</li>
+    <li style={{ fontFamily: FB, fontSize: 13.5, lineHeight: 1.7, marginBottom: 4 }}>{children}</li>
   ),
   strong: ({ children }) => (
-    <strong style={{ fontWeight: 700, color: '#F8FAFC' }}>{children}</strong>
+    <strong style={{ fontWeight: 700, color: INK }}>{children}</strong>
   ),
   code: ({ children, className }) => {
     const isBlock = className?.startsWith('language-')
     if (isBlock) {
       return (
         <code style={{
-          display: 'block', background: BG, border: `1px solid ${BORDER}`,
-          borderRadius: 8, padding: '14px 16px',
-          fontFamily: FM, fontSize: 12, color: '#CBD5E1', lineHeight: 1.7,
+          display: 'block', background: WINDOW_ALT, border: `1.5px solid ${BORDER}`,
+          borderRadius: 8, padding: '12px 14px',
+          fontFamily: FM, fontSize: 12, color: INK, lineHeight: 1.7,
           whiteSpace: 'pre-wrap', wordBreak: 'break-word',
           margin: '8px 0',
         }}>{children}</code>
@@ -70,39 +77,34 @@ const mdComponents: React.ComponentProps<typeof ReactMarkdown>['components'] = {
     }
     return (
       <code style={{
-        fontFamily: FM, fontSize: 12, color: '#C4B5FD',
-        background: 'rgba(124,58,237,0.12)', borderRadius: 4,
-        padding: '1px 6px',
+        fontFamily: FM, fontSize: 12, color: VIOLET,
+        background: '#F3EDFB', borderRadius: 4,
+        padding: '1px 6px', border: `1px solid ${WINDOW_ALT}`,
       }}>{children}</code>
     )
   },
   pre: ({ children }) => (
     <pre style={{ margin: '8px 0', borderRadius: 8, overflow: 'auto' }}>{children}</pre>
   ),
-  table: ({ children }) => (
-    <div style={{ overflowX: 'auto', margin: '0 0 16px' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FB, fontSize: 13 }}>{children}</table>
-    </div>
-  ),
-  thead: ({ children }) => <thead>{children}</thead>,
-  tbody: ({ children }) => <tbody>{children}</tbody>,
-  tr: ({ children }) => (
-    <tr style={{ borderBottom: `1px solid ${BORDER}` }}>{children}</tr>
-  ),
-  th: ({ children }) => (
-    <th style={{ padding: '8px 12px', textAlign: 'left', color: '#94A3B8', fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: FM }}>{children}</th>
-  ),
-  td: ({ children }) => (
-    <td style={{ padding: '10px 12px', color: '#CBD5E1', verticalAlign: 'top' }}>{children}</td>
-  ),
   blockquote: ({ children }) => (
     <blockquote style={{
-      borderLeft: '3px solid #F59E0B', margin: '0 0 14px',
-      padding: '10px 16px', background: 'rgba(245,158,11,0.06)',
+      borderLeft: `4px solid ${GOLD}`, margin: '0 0 12px',
+      padding: '8px 14px', background: '#FFFDF0',
       borderRadius: '0 8px 8px 0',
     }}>{children}</blockquote>
   ),
-  hr: () => <hr style={{ border: 'none', borderTop: `1px solid ${BORDER}`, margin: '20px 0' }} />,
+  table: ({ children }) => (
+    <div style={{ overflowX: 'auto', margin: '0 0 14px' }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FB, fontSize: 13 }}>{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th style={{ padding: '8px 12px', textAlign: 'left', color: WINDOW, fontWeight: 700, fontSize: 12, fontFamily: FD, background: INK, border: `1.5px solid ${BORDER}` }}>{children}</th>
+  ),
+  td: ({ children }) => (
+    <td style={{ padding: '9px 12px', color: INK_SOFT, verticalAlign: 'top', border: `1.5px solid #D8D0EE` }}>{children}</td>
+  ),
+  hr: () => <hr style={{ border: 'none', borderTop: `1.5px solid ${WINDOW_ALT}`, margin: '18px 0' }} />,
 }
 
 export default function PrdReviewClient({ projectId, projectTitle, section, approvedCount, totalCount }: Props) {
@@ -114,6 +116,13 @@ export default function PrdReviewClient({ projectId, projectTitle, section, appr
   const [saveError, setSaveError] = useState<string | null>(null)
   const [approving, setApproving] = useState(false)
   const [approveError, setApproveError] = useState<string | null>(null)
+
+  const progressPct = totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
+
+  const taskbarTabs = [
+    { filename: 'prd_review.sys', color: VIOLET },
+    { filename: 'dashboard', color: PINK },
+  ]
 
   async function handleSave() {
     setSaving(true)
@@ -147,9 +156,7 @@ export default function PrdReviewClient({ projectId, projectTitle, section, appr
     setApproving(true)
     setApproveError(null)
     try {
-      const res = await fetch(`/api/build-ai/project/${projectId}/sections/${section.id}/approve`, {
-        method: 'POST',
-      })
+      const res = await fetch(`/api/build-ai/project/${projectId}/sections/${section.id}/approve`, { method: 'POST' })
       if (!res.ok) {
         const d = await res.json().catch(() => ({}))
         throw new Error(d.error ?? `Approve failed (${res.status})`)
@@ -166,170 +173,143 @@ export default function PrdReviewClient({ projectId, projectTitle, section, appr
     }
   }
 
-  const progressPct = totalCount > 0 ? Math.round((approvedCount / totalCount) * 100) : 0
-
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
-
-      {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50, height: 56,
-        background: 'rgba(13,13,26,0.85)', backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${BORDER}`,
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '0 28px',
+    <RetroShell activePath="build-ai" taskbarTabs={taskbarTabs}>
+      {/* Breadcrumb */}
+      <div style={{
+        maxWidth: 800, margin: '0 auto', padding: '20px 32px 0',
+        fontFamily: FV, fontSize: 16, color: INK,
+        display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <a
-          href="/build-ai"
-          style={{ fontFamily: FD, fontWeight: 600, fontSize: 13, color: '#94A3B8', textDecoration: 'none' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#F8FAFC' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#94A3B8' }}
-        >
-          ← Build AI with AI
-        </a>
-        <span style={{ color: '#374151', fontSize: 11 }}>/</span>
-        <span style={{ fontFamily: FD, fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>
+        <button
+          onClick={() => router.push('/build-ai')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: FV, fontSize: 16, color: INK_SOFT, fontWeight: 700, padding: 0 }}
+        >← Build AI with AI</button>
+        <span style={{ color: INK_SOFT }}>/</span>
+        <span style={{ fontWeight: 700, color: INK, fontFamily: FV, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
           {projectTitle}
         </span>
-      </nav>
+      </div>
 
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '22px 32px 40px' }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        {/* Progress header */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+            <h1 style={{ fontFamily: FD, fontWeight: 800, fontSize: 26, color: INK, margin: 0 }}>
+              Review Your PRD
+            </h1>
             <span style={{
-              fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.08em',
-              textTransform: 'uppercase', color: '#9D5AF0',
-              background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)',
-              borderRadius: 4, padding: '2px 8px',
+              fontFamily: FV, fontSize: 13, fontWeight: 700,
+              background: WINDOW_ALT, color: INK_SOFT,
+              border: `1.5px solid ${BORDER}`, borderRadius: 100,
+              padding: '3px 11px',
             }}>
-              PRD Review
-            </span>
-            <span style={{ fontFamily: FM, fontSize: 12, color: '#4A5568' }}>
-              {approvedCount} of {totalCount} sections approved
+              {approvedCount}/{totalCount} sections
             </span>
           </div>
 
-          {/* Progress bar */}
+          {/* Retro progress bar */}
           <div style={{
-            height: 4, background: 'rgba(255,255,255,0.06)',
-            borderRadius: 4, overflow: 'hidden',
+            height: 10, background: WINDOW_ALT, border: `1.5px solid ${BORDER}`,
+            borderRadius: 100, overflow: 'hidden',
           }}>
             <div style={{
               height: '100%', width: `${progressPct}%`,
-              background: `linear-gradient(90deg, ${VIOLET}, #9D5AF0)`,
-              borderRadius: 4, transition: 'width 0.4s ease',
+              background: `linear-gradient(90deg, ${BLUE}, ${VIOLET})`,
+              borderRadius: 100, transition: 'width 0.4s ease',
             }} />
           </div>
         </div>
 
-        {/* Section card */}
-        <div style={{
-          background: SURFACE, border: `1px solid ${BORDER}`,
-          borderRadius: 16, padding: '28px 28px',
-        }}>
-          {/* Section heading */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <span style={{
-              flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
-              background: 'rgba(124,58,237,0.15)', border: `1px solid ${VIOLET}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: FM, fontSize: 11, fontWeight: 700, color: '#C4B5FD',
-            }}>
-              {section.sectionNumber}
-            </span>
-            <h2 style={{ fontFamily: FS, fontSize: 18, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>
-              {section.sectionName}
-            </h2>
-          </div>
+        {/* Section WindowCard */}
+        <WindowCard
+          bar={{ gradient: `linear-gradient(90deg, ${VIOLET} 0%, #C4AEED 100%)`, label: `section_${section.sectionNumber}.md` }}
+          style={{ marginBottom: 22 }}
+          borderRadius={16}
+        >
+          <div style={{ background: WINDOW, padding: '26px 30px', borderRadius: '0 0 14px 14px' }}>
+            {/* Section heading */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 22 }}>
+              <span style={{
+                flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
+                background: WINDOW_ALT, border: `2px solid ${BORDER}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: FD, fontSize: 13, fontWeight: 800, color: INK,
+              }}>
+                {section.sectionNumber}
+              </span>
+              <h2 style={{ fontFamily: FD, fontSize: 18, fontWeight: 700, color: INK, margin: 0 }}>
+                {section.sectionName}
+              </h2>
+            </div>
 
-          {/* Content: render or edit */}
-          {editMode ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <textarea
-                value={draft}
-                onChange={e => setDraft(e.target.value)}
-                rows={20}
-                style={{
-                  width: '100%', boxSizing: 'border-box',
-                  background: BG, border: `1px solid ${VIOLET}`,
-                  borderRadius: 10, padding: '14px 16px',
-                  fontFamily: FM, fontSize: 12, color: '#E2E8F0',
-                  lineHeight: 1.7, outline: 'none', resize: 'vertical',
-                }}
-              />
-              {saveError && (
-                <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', margin: 0 }}>✗ {saveError}</p>
-              )}
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
+            {/* Content */}
+            {editMode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <textarea
+                  value={draft}
+                  onChange={e => setDraft(e.target.value)}
+                  rows={20}
                   style={{
-                    background: VIOLET, color: '#fff', border: 'none',
-                    borderRadius: 8, padding: '9px 20px',
-                    fontFamily: FD, fontWeight: 600, fontSize: 13,
-                    cursor: saving ? 'not-allowed' : 'pointer',
-                    opacity: saving ? 0.6 : 1,
+                    width: '100%', boxSizing: 'border-box',
+                    background: WINDOW_ALT, border: `2px solid ${BORDER}`,
+                    borderRadius: 10, padding: '14px 16px',
+                    fontFamily: FM, fontSize: 12, color: INK,
+                    lineHeight: 1.7, outline: 'none', resize: 'vertical',
+                  }}
+                />
+                {saveError && <p style={{ fontFamily: FB, fontSize: 13, color: '#EF4444', margin: 0 }}>✗ {saveError}</p>}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <RetroButton onClick={handleSave} disabled={saving} variant="violet">
+                    {saving ? 'Saving…' : 'Save'}
+                  </RetroButton>
+                  <RetroButton onClick={handleCancelEdit} disabled={saving} variant="secondary">
+                    Cancel
+                  </RetroButton>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ marginBottom: 20 }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                    {currentContent}
+                  </ReactMarkdown>
+                </div>
+                <button
+                  onClick={() => { setDraft(currentContent); setEditMode(true) }}
+                  style={{
+                    background: WINDOW_ALT, color: INK_SOFT,
+                    border: `2px solid ${BORDER}`, borderRadius: 8,
+                    padding: '6px 16px', fontFamily: FV, fontSize: 13, fontWeight: 700,
+                    cursor: 'pointer', boxShadow: `2px 2px 0 ${BORDER}`,
                   }}
                 >
-                  {saving ? 'Saving…' : 'Save'}
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  disabled={saving}
-                  style={{
-                    background: 'none', color: '#94A3B8',
-                    border: `1px solid ${BORDER}`, borderRadius: 8,
-                    padding: '9px 20px', fontFamily: FD, fontWeight: 500,
-                    fontSize: 13, cursor: 'pointer',
-                  }}
-                >
-                  Cancel
+                  Edit this section
                 </button>
               </div>
-            </div>
-          ) : (
-            <div>
-              <div style={{ marginBottom: 24 }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
-                  {currentContent}
-                </ReactMarkdown>
-              </div>
-              <button
-                onClick={() => { setDraft(currentContent); setEditMode(true) }}
-                style={{
-                  background: 'none', color: '#64748B',
-                  border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 7,
-                  padding: '6px 14px', fontFamily: FB, fontSize: 12,
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#94A3B8' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#64748B' }}
-              >
-                Edit this section
-              </button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </WindowCard>
 
         {/* Approve button */}
         {!editMode && (
-          <div style={{ marginTop: 24 }}>
+          <div>
             {approveError && (
-              <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12 }}>✗ {approveError}</p>
+              <p style={{ fontFamily: FB, fontSize: 13, color: '#EF4444', marginBottom: 12 }}>✗ {approveError}</p>
             )}
             <button
               onClick={handleApprove}
               disabled={approving}
               style={{
-                width: '100%', background: approving ? 'rgba(124,58,237,0.5)' : VIOLET,
-                color: '#fff', border: 'none', borderRadius: 12,
-                padding: '14px 0', fontFamily: FD, fontWeight: 700, fontSize: 15,
+                display: 'block', width: '100%', boxSizing: 'border-box',
+                background: approving ? 'rgba(92,124,250,0.4)' : BLUE,
+                color: '#fff', border: `2.5px solid ${BORDER}`,
+                borderRadius: 14, padding: '16px 0',
+                fontFamily: FD, fontWeight: 700, fontSize: 15,
                 cursor: approving ? 'not-allowed' : 'pointer',
-                boxShadow: approving ? 'none' : '0 4px 20px rgba(124,58,237,0.35)',
-                transition: 'background 0.15s',
+                boxShadow: approving ? 'none' : `6px 6px 0 ${BORDER}`,
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease',
               }}
             >
               {approving
@@ -341,6 +321,6 @@ export default function PrdReviewClient({ projectId, projectTitle, section, appr
           </div>
         )}
       </div>
-    </div>
+    </RetroShell>
   )
 }

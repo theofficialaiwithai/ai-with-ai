@@ -4,34 +4,37 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import RetroShell from '@/components/retro-os/retro-shell'
+import WindowCard, { RetroButton, RetroPill } from '@/components/retro-os/window-card'
+
+const BORDER = '#000000'
+const INK = '#1B1533'
+const INK_SOFT = '#5A536F'
+const GOLD = '#FFCB33'
+const PINK = '#FF5FA8'
+const PINK_SOFT = '#FF9BD0'
+const BLUE = '#5C7CFA'
+const LIME = '#5FD98A'
+const VIOLET = '#9B7FD1'
+const WINDOW = '#FFFFFF'
+const WINDOW_ALT = '#ECE9F5'
 
 const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
+const FV = "var(--font-vt323,'VT323'),monospace"
 const FB = "var(--font-inter,'Inter'),sans-serif"
 const FM = "var(--font-jetbrains-mono,'JetBrains Mono'),monospace"
-const FS = "var(--font-sora,'Sora'),sans-serif"
-
-const BG = '#0D0D1A'
-const SURFACE = '#1A1A2E'
-const BORDER = 'rgba(255,255,255,0.06)'
-const VIOLET = '#7C3AED'
 
 const BUILD_TOOL_LABELS: Record<string, string> = {
-  claude_code: 'Claude Code',
-  cursor: 'Cursor',
-  replit: 'Replit',
-  lovable: 'Lovable',
+  claude_code: 'CLAUDE CODE',
+  cursor: 'CURSOR',
+  replit: 'REPLIT',
+  lovable: 'LOVABLE',
 }
 
 const PATH_LABELS: Record<string, string> = {
-  from_scratch: 'From Scratch',
-  agentify_existing: 'Enhance Existing',
-}
-
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  prd_generated: { bg: 'rgba(124,58,237,0.15)', color: '#C4B5FD' },
-  building:      { bg: 'rgba(245,158,11,0.15)', color: '#FCD34D' },
-  completed:     { bg: 'rgba(16,185,129,0.15)',  color: '#6EE7B7' },
-  discovery:     { bg: 'rgba(100,116,139,0.15)', color: '#94A3B8' },
+  from_scratch: 'FROM SCRATCH',
+  agentify_existing: 'ENHANCE EXISTING',
+  level_project: 'LEVEL PROJECT',
 }
 
 type Project = {
@@ -53,31 +56,122 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function deriveFilename(title: string) {
+  const word = title.trim().split(/[\s—–\-]/)[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+  return `${word || 'project'}.prd`
+}
+
+function statusTag(status: string): { label: string; bg: string; color: string } {
+  if (status === 'building') return { label: 'BUILDING', bg: PINK, color: '#fff' }
+  if (status === 'complete') return { label: 'COMPLETE', bg: LIME, color: INK }
+  if (['reviewing_sections', 'prd_generated'].includes(status)) return { label: 'PRD_GENERATED', bg: WINDOW_ALT, color: INK_SOFT }
+  return { label: status.toUpperCase().replace(/_/g, '_'), bg: WINDOW_ALT, color: INK_SOFT }
+}
+
+const mdComponents: React.ComponentProps<typeof ReactMarkdown>['components'] = {
+  h1: ({ children }) => (
+    <h1 style={{ fontFamily: FD, fontSize: 20, fontWeight: 800, color: INK, marginTop: 0, marginBottom: 14, paddingBottom: 10, borderBottom: `2px solid ${WINDOW_ALT}` }}>{children}</h1>
+  ),
+  h2: ({ children }) => (
+    <h2 style={{ fontFamily: FD, fontSize: 16, fontWeight: 700, color: INK, marginTop: 26, marginBottom: 10, paddingBottom: 7, borderBottom: `1.5px solid ${WINDOW_ALT}` }}>{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 style={{ fontFamily: FD, fontSize: 14, fontWeight: 700, color: INK, marginTop: 18, marginBottom: 7 }}>{children}</h3>
+  ),
+  p: ({ children }) => (
+    <p style={{ fontFamily: FB, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.7, marginBottom: 12, marginTop: 0 }}>{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul style={{ fontFamily: FB, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.7, marginBottom: 12, paddingLeft: 20 }}>{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol style={{ fontFamily: FB, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.7, marginBottom: 12, paddingLeft: 20 }}>{children}</ol>
+  ),
+  li: ({ children }) => (
+    <li style={{ marginBottom: 4 }}>{children}</li>
+  ),
+  strong: ({ children }) => (
+    <strong style={{ color: INK, fontWeight: 700 }}>{children}</strong>
+  ),
+  code: ({ children, className }) => {
+    const isBlock = className?.startsWith('language-')
+    return isBlock ? (
+      <code style={{
+        display: 'block', fontFamily: FM, fontSize: 12,
+        background: WINDOW_ALT, color: INK,
+        padding: '12px 16px', borderRadius: 8,
+        border: `1.5px solid ${BORDER}`,
+        overflowX: 'auto', lineHeight: 1.7, whiteSpace: 'pre',
+      }}>{children}</code>
+    ) : (
+      <code style={{
+        fontFamily: FM, fontSize: 12, color: VIOLET,
+        background: '#F3EDFB', padding: '2px 6px',
+        borderRadius: 4, border: `1px solid ${WINDOW_ALT}`,
+      }}>{children}</code>
+    )
+  },
+  pre: ({ children }) => (
+    <pre style={{ marginBottom: 14, marginTop: 8, borderRadius: 8, overflow: 'hidden' }}>{children}</pre>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote style={{
+      borderLeft: `4px solid ${GOLD}`,
+      margin: '0 0 14px', color: INK_SOFT,
+      background: '#FFFDF0', borderRadius: '0 8px 8px 0',
+      padding: '10px 14px',
+    }}>{children}</blockquote>
+  ),
+  table: ({ children }) => (
+    <div style={{ overflowX: 'auto', marginBottom: 14 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FB, fontSize: 13 }}>{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th style={{
+      textAlign: 'left', padding: '8px 12px',
+      fontFamily: FD, fontWeight: 700, fontSize: 12, color: WINDOW,
+      borderBottom: `2px solid ${BORDER}`, background: INK,
+      border: `1.5px solid ${BORDER}`,
+    }}>{children}</th>
+  ),
+  td: ({ children }) => (
+    <td style={{
+      padding: '9px 12px', color: INK_SOFT,
+      border: `1.5px solid #D8D0EE`, verticalAlign: 'top', lineHeight: 1.55,
+    }}>{children}</td>
+  ),
+  hr: () => (
+    <hr style={{ border: 'none', borderTop: `2px solid ${WINDOW_ALT}`, margin: '22px 0' }} />
+  ),
+}
+
 export default function ProjectPrdClient({ project }: { project: Project }) {
   const router = useRouter()
+  const filename = deriveFilename(project.title)
 
-  // copy
   const [copied, setCopied] = useState(false)
-
-  // edit mode
   const [editMode, setEditMode] = useState(false)
   const [draftPrd, setDraftPrd] = useState(project.prdMarkdown)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // risk acknowledgment
   const [acknowledged, setAcknowledged] = useState(project.domainRiskAcknowledged)
   const [riskChecked, setRiskChecked] = useState(false)
   const [acknowledging, setAcknowledging] = useState(false)
   const [ackError, setAckError] = useState<string | null>(null)
 
-  // start building
   const [building, setBuilding] = useState(false)
   const [buildError, setBuildError] = useState<string | null>(null)
 
-  const statusStyle = STATUS_COLORS[project.status] ?? STATUS_COLORS.discovery
   const showRiskPanel = project.domainRiskFlagged && !acknowledged
   const canStartBuilding = project.status === 'prd_generated' && (!project.domainRiskFlagged || acknowledged)
+
+  const tag = statusTag(project.status)
+  const taskbarTabs = [
+    { filename, color: PINK },
+    { filename: 'dashboard', color: BLUE },
+  ]
 
   async function handleCopy() {
     await navigator.clipboard.writeText(editMode ? draftPrd : project.prdMarkdown)
@@ -123,9 +217,7 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
     setAcknowledging(true)
     setAckError(null)
     try {
-      const res = await fetch(`/api/build-ai/project/${project.id}/acknowledge-risk`, {
-        method: 'POST',
-      })
+      const res = await fetch(`/api/build-ai/project/${project.id}/acknowledge-risk`, { method: 'POST' })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error ?? 'Failed to acknowledge')
@@ -142,9 +234,7 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
     setBuilding(true)
     setBuildError(null)
     try {
-      const res = await fetch(`/api/build-ai/project/${project.id}/generate-steps`, {
-        method: 'POST',
-      })
+      const res = await fetch(`/api/build-ai/project/${project.id}/generate-steps`, { method: 'POST' })
       if (!res.ok) {
         let msg = `Server error (${res.status})`
         try { const d = await res.json(); msg = d.error ?? msg } catch {}
@@ -158,425 +248,215 @@ export default function ProjectPrdClient({ project }: { project: Project }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
-
-      {/* Nav */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 50, height: 56,
-        background: 'rgba(13,13,26,0.85)', backdropFilter: 'blur(20px)',
-        borderBottom: `1px solid ${BORDER}`,
-        display: 'flex', alignItems: 'center', gap: 16,
-        padding: '0 28px',
+    <RetroShell activePath="build-ai" taskbarTabs={taskbarTabs}>
+      {/* Breadcrumb */}
+      <div style={{
+        maxWidth: 900, margin: '0 auto', padding: '20px 32px 0',
+        fontFamily: FV, fontSize: 16, color: INK,
+        display: 'flex', alignItems: 'center', gap: 8,
       }}>
         <button
           onClick={() => router.push('/build-ai')}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            fontFamily: FD, fontWeight: 600, fontSize: 13,
-            color: '#94A3B8', padding: 0, display: 'flex', alignItems: 'center', gap: 6,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#F8FAFC' }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#94A3B8' }}
-        >
-          ← Build AI with AI
-        </button>
-        <span style={{ fontFamily: FM, fontSize: 11, color: '#374151' }}>/</span>
-        <span style={{
-          fontFamily: FD, fontSize: 13, color: '#F8FAFC', fontWeight: 600,
-          maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        }}>
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: FV, fontSize: 16, color: INK_SOFT, fontWeight: 700, padding: 0 }}
+        >← Build AI with AI</button>
+      </div>
+
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '18px 32px 40px' }}>
+
+        {/* Page header */}
+        <h1 style={{ fontFamily: FD, fontWeight: 800, fontSize: 26, color: INK, marginBottom: 12, lineHeight: 1.25 }}>
           {project.title}
-        </span>
-      </nav>
+        </h1>
 
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '40px 24px 80px' }}>
-
-        {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontFamily: FS, fontSize: 24, fontWeight: 700, color: '#F8FAFC', marginBottom: 12, lineHeight: 1.3 }}>
-            {project.title}
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {/* Status */}
-            <span style={{
-              fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-              textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4,
-              background: statusStyle.bg, color: statusStyle.color,
-              border: `1px solid ${statusStyle.color}30`,
-            }}>
-              {project.status.replace(/_/g, ' ')}
-            </span>
-            {/* Path badge */}
-            <span style={{
-              fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-              textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4,
-              background: 'rgba(255,255,255,0.04)', color: '#64748B',
-              border: `1px solid ${BORDER}`,
-            }}>
-              {PATH_LABELS[project.path] ?? project.path}
-            </span>
-            {/* Build tool */}
-            <span style={{
-              fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-              textTransform: 'uppercase', padding: '3px 10px', borderRadius: 4,
-              background: 'rgba(255,255,255,0.05)', color: '#94A3B8',
-              border: `1px solid ${BORDER}`,
-            }}>
-              {BUILD_TOOL_LABELS[project.buildTool] ?? project.buildTool}
-            </span>
-            {/* Existing app URL */}
-            {project.existingAppUrl && (
-              <a
-                href={project.existingAppUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontFamily: FM, fontSize: 11, fontWeight: 600,
-                  letterSpacing: '0.04em', color: '#7C3AED',
-                  background: 'rgba(124,58,237,0.08)',
-                  border: '1px solid rgba(124,58,237,0.25)',
-                  padding: '3px 10px', borderRadius: 4,
-                  textDecoration: 'none',
-                  maxWidth: 260, overflow: 'hidden',
-                  textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  display: 'inline-block',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.15)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(124,58,237,0.08)' }}
-              >
-                ↗ {project.existingAppUrl.replace(/^https?:\/\//, '')}
-              </a>
-            )}
-            {/* Date */}
-            {project.createdAt && (
-              <span style={{ fontFamily: FB, fontSize: 12, color: '#64748B' }}>
-                {formatDate(project.createdAt)}
-              </span>
-            )}
-          </div>
+        {/* Meta pills */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
+          <span style={{
+            fontFamily: FV, fontSize: 13, fontWeight: 700,
+            background: tag.bg, color: tag.color,
+            border: `1.5px solid ${BORDER}`, borderRadius: 100, padding: '3px 11px',
+          }}>{tag.label}</span>
+          <RetroPill>{PATH_LABELS[project.path] ?? project.path}</RetroPill>
+          {project.buildTool && (
+            <RetroPill>{BUILD_TOOL_LABELS[project.buildTool] ?? project.buildTool}</RetroPill>
+          )}
+          {project.existingAppUrl && (
+            <a
+              href={project.existingAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontFamily: FV, fontSize: 13, fontWeight: 700,
+                color: VIOLET, border: `1.5px solid ${VIOLET}`,
+                borderRadius: 100, padding: '3px 11px',
+                textDecoration: 'none', background: '#F3EDFB',
+              }}
+            >
+              ↗ {project.existingAppUrl.replace(/^https?:\/\//, '')}
+            </a>
+          )}
+          {project.createdAt && (
+            <span style={{ fontFamily: FV, fontSize: 14, color: INK_SOFT }}>{formatDate(project.createdAt)}</span>
+          )}
         </div>
 
-        {/* Domain risk panel */}
+        {/* Toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginBottom: 20 }}>
+          {!editMode ? (
+            <>
+              <RetroButton variant="secondary" onClick={handleCopy}>
+                {copied ? '✓ Copied' : 'Copy PRD'}
+              </RetroButton>
+              <RetroButton variant="secondary" onClick={handleEdit}>Edit PRD</RetroButton>
+            </>
+          ) : (
+            <>
+              <RetroButton variant="secondary" onClick={handleCancel} disabled={saving}>Cancel</RetroButton>
+              <RetroButton variant="violet" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </RetroButton>
+            </>
+          )}
+        </div>
+        {saveError && (
+          <p style={{ fontFamily: FB, fontSize: 13, color: '#EF4444', marginBottom: 12, textAlign: 'right' }}>✗ {saveError}</p>
+        )}
+
+        {/* Risk callout */}
         {showRiskPanel && (
           <div style={{
-            background: 'rgba(239,68,68,0.06)',
-            border: '1.5px solid #EF4444',
-            borderRadius: 14,
-            padding: '22px 24px',
-            marginBottom: 28,
+            background: '#FFFDF0', border: `2px solid ${GOLD}`,
+            borderLeft: `5px solid ${GOLD}`, borderRadius: 12,
+            padding: '18px 22px', marginBottom: 24,
           }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 16 }}>
-              <span style={{ fontSize: 22, flexShrink: 0, lineHeight: 1 }}>⚠️</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 14 }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>⚠</span>
               <div>
-                <p style={{ fontFamily: FD, fontWeight: 700, fontSize: 14, color: '#FCA5A5', margin: '0 0 6px' }}>
-                  Sensitive domain detected — review required before building
+                <p style={{ fontFamily: FD, fontWeight: 700, fontSize: 14, color: INK, margin: '0 0 6px' }}>
+                  Domain risk detected — review required before building
                 </p>
-                <p style={{ fontFamily: FB, fontSize: 13, color: '#CBD5E1', lineHeight: 1.6, margin: 0 }}>
-                  This project touches areas that carry regulatory, compliance, or safety risk. You are responsible for meeting all applicable requirements before shipping.
+                <p style={{ fontFamily: FB, fontSize: 13, color: INK_SOFT, lineHeight: 1.6, margin: 0 }}>
+                  This project touches sensitive categories:{' '}
+                  <strong>{project.riskCategories.join(', ')}</strong>.
+                  Review carefully before building.
                 </p>
               </div>
             </div>
-
-            {project.riskCategories.length > 0 && (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 18 }}>
-                {project.riskCategories.map(cat => (
-                  <span key={cat} style={{
-                    fontFamily: FM, fontSize: 10, fontWeight: 600, letterSpacing: '0.05em',
-                    textTransform: 'uppercase', padding: '3px 9px', borderRadius: 4,
-                    background: 'rgba(239,68,68,0.12)', color: '#FCA5A5',
-                    border: '1px solid rgba(239,68,68,0.3)',
-                  }}>
-                    {cat}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none', marginBottom: 14 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none', marginBottom: 12 }}>
               <input
                 type="checkbox"
                 checked={riskChecked}
                 onChange={e => setRiskChecked(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: '#EF4444', cursor: 'pointer' }}
+                style={{ width: 16, height: 16, accentColor: '#000', cursor: 'pointer' }}
               />
-              <span style={{ fontFamily: FB, fontSize: 13, color: '#F1F5F9' }}>
+              <span style={{ fontFamily: FB, fontSize: 13, color: INK }}>
                 I&apos;ve read this and understand the risk
               </span>
             </label>
-
-            {ackError && (
-              <p style={{ fontFamily: FB, fontSize: 12, color: '#F87171', margin: '0 0 10px' }}>✗ {ackError}</p>
-            )}
-
-            <button
+            {ackError && <p style={{ fontFamily: FB, fontSize: 12, color: '#EF4444', margin: '0 0 8px' }}>✗ {ackError}</p>}
+            <RetroButton
               onClick={handleAcknowledge}
               disabled={!riskChecked || acknowledging}
-              style={{
-                background: !riskChecked || acknowledging ? 'rgba(239,68,68,0.2)' : '#EF4444',
-                border: 'none', color: '#fff',
-                fontFamily: FD, fontWeight: 700, fontSize: 13,
-                padding: '9px 20px', borderRadius: 8,
-                cursor: !riskChecked || acknowledging ? 'not-allowed' : 'pointer',
-                transition: 'background 0.15s',
-                opacity: !riskChecked ? 0.5 : 1,
-              }}
+              variant="primary"
             >
               {acknowledging ? 'Confirming…' : 'Confirm & Unlock'}
-            </button>
+            </RetroButton>
           </div>
         )}
 
-        {/* PRD toolbar */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 20 }}>
-          {!editMode ? (
-            <>
-              <button
-                onClick={handleCopy}
-                style={{
-                  background: copied ? 'rgba(16,185,129,0.15)' : SURFACE,
-                  border: `1px solid ${copied ? 'rgba(16,185,129,0.4)' : BORDER}`,
-                  color: copied ? '#6EE7B7' : '#94A3B8',
-                  fontFamily: FM, fontSize: 11, fontWeight: 600,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {copied ? '✓ Copied' : 'Copy PRD'}
-              </button>
-              <button
-                onClick={handleEdit}
-                style={{
-                  background: SURFACE, border: `1px solid ${BORDER}`,
-                  color: '#94A3B8', fontFamily: FM, fontSize: 11, fontWeight: 600,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; e.currentTarget.style.color = '#F8FAFC' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#94A3B8' }}
-              >
-                Edit PRD
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={handleCancel}
-                disabled={saving}
-                style={{
-                  background: SURFACE, border: `1px solid ${BORDER}`,
-                  color: '#94A3B8', fontFamily: FM, fontSize: 11, fontWeight: 600,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  padding: '7px 14px', borderRadius: 8,
-                  cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                style={{
-                  background: saving ? 'rgba(124,58,237,0.5)' : VIOLET,
-                  border: 'none', color: '#fff',
-                  fontFamily: FM, fontSize: 11, fontWeight: 600,
-                  letterSpacing: '0.06em', textTransform: 'uppercase',
-                  padding: '7px 18px', borderRadius: 8,
-                  cursor: saving ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
-                }}
-              >
-                {saving ? 'Saving…' : 'Save'}
-              </button>
-            </>
-          )}
-        </div>
-
-        {saveError && (
-          <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12, textAlign: 'right' }}>
-            ✗ {saveError}
-          </p>
-        )}
-
-        {/* PRD content */}
-        {editMode ? (
-          <textarea
-            value={draftPrd}
-            onChange={e => setDraftPrd(e.target.value)}
-            spellCheck={false}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              minHeight: 640, resize: 'vertical',
-              background: SURFACE, border: `1px solid rgba(124,58,237,0.4)`,
-              borderRadius: 16, padding: '28px 32px',
-              fontFamily: FM, fontSize: 13, color: '#CBD5E1',
-              lineHeight: 1.75, outline: 'none',
-            }}
-          />
-        ) : (
-          <div style={{
-            background: SURFACE, border: `1px solid ${BORDER}`,
-            borderRadius: 16, padding: '36px 40px',
-          }}>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                h1: ({ children }) => (
-                  <h1 style={{ fontFamily: FS, fontSize: 22, fontWeight: 700, color: '#F8FAFC', marginTop: 0, marginBottom: 16, paddingBottom: 10, borderBottom: `1px solid ${BORDER}` }}>{children}</h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 style={{ fontFamily: FS, fontSize: 17, fontWeight: 700, color: '#F8FAFC', marginTop: 32, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${BORDER}` }}>{children}</h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 style={{ fontFamily: FD, fontSize: 14, fontWeight: 700, color: '#E2E8F0', marginTop: 20, marginBottom: 8 }}>{children}</h3>
-                ),
-                p: ({ children }) => (
-                  <p style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, marginTop: 0 }}>{children}</p>
-                ),
-                ul: ({ children }) => (
-                  <ul style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, paddingLeft: 20 }}>{children}</ul>
-                ),
-                ol: ({ children }) => (
-                  <ol style={{ fontFamily: FB, fontSize: 14, color: '#CBD5E1', lineHeight: 1.75, marginBottom: 14, paddingLeft: 20 }}>{children}</ol>
-                ),
-                li: ({ children }) => (
-                  <li style={{ marginBottom: 4 }}>{children}</li>
-                ),
-                strong: ({ children }) => (
-                  <strong style={{ color: '#F1F5F9', fontWeight: 700 }}>{children}</strong>
-                ),
-                code: ({ children, className }) => {
-                  const isBlock = className?.startsWith('language-')
-                  return isBlock ? (
-                    <code style={{
-                      display: 'block', fontFamily: FM, fontSize: 12,
-                      background: '#0D0D1A', color: '#A5F3FC',
-                      padding: '14px 18px', borderRadius: 8,
-                      border: `1px solid ${BORDER}`,
-                      overflowX: 'auto', lineHeight: 1.7, whiteSpace: 'pre',
-                    }}>{children}</code>
-                  ) : (
-                    <code style={{
-                      fontFamily: FM, fontSize: 12, color: '#C4B5FD',
-                      background: 'rgba(124,58,237,0.12)', padding: '2px 6px',
-                      borderRadius: 4,
-                    }}>{children}</code>
-                  )
-                },
-                pre: ({ children }) => (
-                  <pre style={{ marginBottom: 16, marginTop: 8, borderRadius: 8, overflow: 'hidden' }}>{children}</pre>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote style={{
-                    borderLeft: `3px solid ${VIOLET}`,
-                    margin: '0 0 16px', color: '#94A3B8',
-                    background: 'rgba(124,58,237,0.06)', borderRadius: '0 8px 8px 0',
-                    padding: '12px 16px',
-                  }}>{children}</blockquote>
-                ),
-                table: ({ children }) => (
-                  <div style={{ overflowX: 'auto', marginBottom: 16 }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: FB, fontSize: 13 }}>{children}</table>
-                  </div>
-                ),
-                th: ({ children }) => (
-                  <th style={{
-                    textAlign: 'left', padding: '8px 12px',
-                    fontFamily: FD, fontWeight: 700, fontSize: 12, color: '#94A3B8',
-                    borderBottom: `1px solid ${BORDER}`, background: '#0D0D1A',
-                  }}>{children}</th>
-                ),
-                td: ({ children }) => (
-                  <td style={{
-                    padding: '8px 12px', color: '#CBD5E1',
-                    borderBottom: `1px solid ${BORDER}`,
-                  }}>{children}</td>
-                ),
-                hr: () => (
-                  <hr style={{ border: 'none', borderTop: `1px solid ${BORDER}`, margin: '24px 0' }} />
-                ),
+        {/* PRD Document */}
+        <WindowCard
+          bar={{ gradient: `linear-gradient(90deg, ${PINK} 0%, ${PINK_SOFT} 100%)`, label: filename }}
+          style={{ marginBottom: 26 }}
+          borderRadius={16}
+        >
+          {editMode ? (
+            <textarea
+              value={draftPrd}
+              onChange={e => setDraftPrd(e.target.value)}
+              spellCheck={false}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                minHeight: 640, resize: 'vertical',
+                background: WINDOW, border: 'none', borderRadius: '0 0 14px 14px',
+                padding: '28px 32px',
+                fontFamily: FM, fontSize: 13, color: INK,
+                lineHeight: 1.75, outline: 'none',
               }}
-            >
-              {project.prdMarkdown}
-            </ReactMarkdown>
-          </div>
-        )}
+            />
+          ) : (
+            <div style={{ background: WINDOW, padding: '28px 32px', borderRadius: '0 0 14px 14px' }}>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdComponents}>
+                {project.prdMarkdown}
+              </ReactMarkdown>
+            </div>
+          )}
+        </WindowCard>
 
-        {/* Start Building / bottom actions */}
-        <div style={{ marginTop: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-          {/* Governance gate explainer when blocked */}
+        {/* Bottom actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {project.status === 'prd_generated' && project.domainRiskFlagged && !acknowledged && (
-            <p style={{
-              fontFamily: FB, fontSize: 13, color: '#64748B',
-              textAlign: 'center', margin: 0,
-            }}>
+            <p style={{ fontFamily: FV, fontSize: 14, color: INK_SOFT, textAlign: 'center', margin: 0 }}>
               Acknowledge the risk review above to unlock Start Building.
             </p>
           )}
 
-          {/* Start Building button */}
           {project.status === 'prd_generated' && (
             <button
               onClick={handleStartBuilding}
               disabled={!canStartBuilding || building}
               style={{
-                background: !canStartBuilding || building
-                  ? 'rgba(124,58,237,0.25)'
-                  : VIOLET,
-                border: 'none', color: '#fff',
+                display: 'block', width: '100%', boxSizing: 'border-box',
+                background: !canStartBuilding || building ? 'rgba(92,124,250,0.4)' : BLUE,
+                color: '#fff', textDecoration: 'none',
                 fontFamily: FD, fontWeight: 700, fontSize: 16,
-                padding: '16px 0', borderRadius: 12, width: '100%',
+                padding: '16px 0', border: `2.5px solid ${BORDER}`,
+                borderRadius: 14, textAlign: 'center',
+                boxShadow: canStartBuilding && !building ? `6px 6px 0 ${BORDER}` : 'none',
                 cursor: !canStartBuilding || building ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: canStartBuilding && !building ? '0 6px 28px rgba(124,58,237,0.4)' : 'none',
-                opacity: !canStartBuilding ? 0.5 : 1,
+                opacity: !canStartBuilding ? 0.55 : 1,
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease',
               }}
             >
-              {building ? '✦ Generating your build plan…' : 'Start Building →'}
+              {building ? '✦ Generating your build plan…' : 'Continue Building →'}
             </button>
           )}
 
           {buildError && (
-            <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', margin: 0, textAlign: 'center' }}>
-              ✗ {buildError}
-            </p>
+            <p style={{ fontFamily: FB, fontSize: 13, color: '#EF4444', margin: 0, textAlign: 'center' }}>✗ {buildError}</p>
           )}
 
-          {/* Continue to coach when steps are already generated */}
           {(project.status === 'building' || project.status === 'complete') && (
             <button
               onClick={() => router.push(`/build-ai/project/${project.id}/${project.status === 'building' ? 'build-map' : 'coach'}`)}
               style={{
-                background: project.status === 'complete' ? 'rgba(16,185,129,0.15)' : VIOLET,
-                border: project.status === 'complete' ? '1px solid rgba(16,185,129,0.35)' : 'none',
-                color: project.status === 'complete' ? '#6EE7B7' : '#fff',
+                display: 'block', width: '100%', boxSizing: 'border-box',
+                background: project.status === 'complete' ? LIME : BLUE,
+                color: project.status === 'complete' ? INK : '#fff',
                 fontFamily: FD, fontWeight: 700, fontSize: 16,
-                padding: '16px 0', borderRadius: 12, width: '100%',
-                cursor: 'pointer', transition: 'all 0.2s',
-                boxShadow: project.status === 'building' ? '0 6px 28px rgba(124,58,237,0.4)' : 'none',
+                padding: '16px 0', border: `2.5px solid ${BORDER}`,
+                borderRadius: 14, textAlign: 'center',
+                boxShadow: `6px 6px 0 ${BORDER}`,
+                cursor: 'pointer',
+                transition: 'transform 0.1s ease, box-shadow 0.1s ease',
               }}
             >
               {project.status === 'complete' ? '✓ View Completed Build' : 'Continue Building →'}
             </button>
           )}
 
-          {/* New Project link */}
           <button
             onClick={() => router.push('/build-ai/new')}
             style={{
-              background: 'none', border: `1px solid ${BORDER}`,
-              color: '#94A3B8', fontFamily: FD, fontWeight: 600, fontSize: 13,
-              padding: '10px 20px', borderRadius: 10, cursor: 'pointer',
-              alignSelf: 'flex-start',
+              background: 'none', border: `2px solid ${BORDER}`,
+              color: INK_SOFT, fontFamily: FV, fontWeight: 700, fontSize: 14,
+              padding: '8px 18px', borderRadius: 10, cursor: 'pointer',
+              alignSelf: 'flex-start', boxShadow: `2px 2px 0 ${BORDER}`,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(124,58,237,0.4)'; e.currentTarget.style.color = '#F8FAFC' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#94A3B8' }}
           >
             + New Project
           </button>
         </div>
       </div>
-    </div>
+    </RetroShell>
   )
 }

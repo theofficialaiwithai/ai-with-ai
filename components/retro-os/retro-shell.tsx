@@ -131,7 +131,10 @@ export default function RetroShell({
           overflow: 'hidden',
           whiteSpace: 'nowrap',
         }}>
-          <div className="retro-marquee-inner" style={{
+          <div style={{
+            display: 'inline-block',
+            animation: 'retro-marquee 18s linear infinite',
+            whiteSpace: 'nowrap',
             fontFamily: FV, fontSize: 15, color: GOLD, letterSpacing: '0.06em',
           }}>
             {marqueeFull}

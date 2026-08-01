@@ -87,7 +87,12 @@ body::after {
     linear-gradient(rgba(70,50,110,0.14) 1px, transparent 1px),
     linear-gradient(90deg, rgba(70,50,110,0.14) 1px, transparent 1px);
   background-size: 100% 100%, 40px 40px, 40px 40px;
-  padding-bottom: 96px;
+  background-attachment: fixed;
+  padding-bottom: 120px;
+}
+
+.retro-page::before {
+  display: none;
 }
 
 @keyframes retro-marquee {

@@ -1,14 +1,18 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import type { LevelProjectEntry } from '@/lib/leveling'
 
-const FB = "var(--font-inter,'Inter'),sans-serif"
+const BORDER = '#000000'
+const INK = '#1B1533'
+const INK_SOFT = '#5A536F'
+const LIME = '#5FD98A'
+const WINDOW = '#FFFFFF'
+const WINDOW_ALT = '#ECE9F5'
+
 const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
-const FM = "var(--font-jetbrains-mono,'JetBrains Mono'),monospace"
-const BORDER = 'rgba(255,255,255,0.06)'
-const SURFACE = '#1A1A24'
+const FV = "var(--font-vt323,'VT323'),monospace"
+const FB = "var(--font-inter,'Inter'),sans-serif"
 
 interface Props {
   levelNumber: number
@@ -17,44 +21,22 @@ interface Props {
 }
 
 export default function LevelProjectCards({ levelNumber, projects, bandColor }: Props) {
-  const router = useRouter()
   const allComplete = projects.every(p => p.status === 'complete')
-  const completeCount = projects.filter(p => p.status === 'complete').length
-
   const anyDeployedUrl = projects.find(p => p.deployedUrl)?.deployedUrl ?? null
 
   return (
     <div>
-      {/* Summary */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{
-          fontFamily: FM, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-          textTransform: 'uppercase', color: '#64748B',
-        }}>
-          Projects
-        </span>
-        <span style={{
-          fontFamily: FB, fontSize: 12, fontWeight: 600,
-          color: allComplete ? '#10B981' : '#94A3B8',
-        }}>
-          {completeCount} of {projects.length} complete
-        </span>
-      </div>
-
-      {/* Project cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
         {projects.map(p => (
           <ProjectCard
             key={p.projectNumber}
             project={p}
             levelNumber={levelNumber}
             bandColor={bandColor}
-            onStarted={() => router.refresh()}
           />
         ))}
       </div>
 
-      {/* Deployed URL section — only when all complete */}
       {allComplete && (
         <DeployedUrlSection
           projects={projects}
@@ -70,12 +52,10 @@ function ProjectCard({
   project,
   levelNumber,
   bandColor,
-  onStarted,
 }: {
   project: LevelProjectEntry
   levelNumber: number
   bandColor: string
-  onStarted: () => void
 }) {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -100,64 +80,62 @@ function ProjectCard({
   const isComplete = project.status === 'complete'
   const isInProgress = project.status === 'in_progress'
 
+  const statusLabel = isComplete ? 'COMPLETE' : isInProgress ? 'IN_PROGRESS' : 'NOT_STARTED'
+  const statusBg = isComplete ? LIME : isInProgress ? bandColor : WINDOW_ALT
+  const statusColor = isComplete ? INK : isInProgress ? '#fff' : INK_SOFT
+
   return (
     <div style={{
-      background: SURFACE,
-      border: `1px solid ${isComplete ? `${bandColor}30` : BORDER}`,
+      background: WINDOW, border: `2px solid ${BORDER}`,
       borderRadius: 14, padding: '20px 22px',
+      boxShadow: `4px 4px 0 ${BORDER}`,
       display: 'flex', alignItems: 'flex-start', gap: 16,
     }}>
-      {/* Status indicator */}
+      {/* Left: status dot */}
       <div style={{
         width: 10, height: 10, borderRadius: '50%', flexShrink: 0, marginTop: 5,
-        background: isComplete ? '#10B981' : isInProgress ? bandColor : 'rgba(255,255,255,0.15)',
+        background: isComplete ? LIME : isInProgress ? bandColor : WINDOW_ALT,
+        border: `1.5px solid ${BORDER}`,
         boxShadow: isInProgress ? `0 0 8px ${bandColor}80` : 'none',
       }} />
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <span style={{
-            fontFamily: FM, fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: isComplete ? '#10B981' : isInProgress ? bandColor : '#4B5563',
-          }}>
-            {isComplete ? 'Complete' : isInProgress ? 'In progress' : 'Not started'}
-          </span>
-        </div>
-        <h3 style={{
-          fontFamily: FD, fontSize: 15, fontWeight: 700,
-          color: isComplete ? '#94A3B8' : '#F8FAFC',
-          margin: '0 0 6px', letterSpacing: '-0.01em',
+        {/* Status pill */}
+        <span style={{
+          fontFamily: FV, fontSize: 12, fontWeight: 700,
+          display: 'inline-block', background: statusBg, color: statusColor,
+          border: `1.5px solid ${BORDER}`, borderRadius: 100,
+          padding: '2px 10px', marginBottom: 8,
         }}>
+          {statusLabel}
+        </span>
+
+        <h3 style={{ fontFamily: FD, fontSize: 15, fontWeight: 700, color: INK, margin: '0 0 6px' }}>
           {project.projectTitle}
         </h3>
-        <p style={{
-          fontFamily: FB, fontSize: 13, color: '#64748B',
-          margin: 0, lineHeight: 1.6,
-        }}>
+        <p style={{ fontFamily: FB, fontSize: 13, color: INK_SOFT, margin: 0, lineHeight: 1.6 }}>
           {project.projectDescription}
         </p>
 
         {error && (
-          <p style={{ fontFamily: FB, fontSize: 12, color: '#F87171', margin: '8px 0 0' }}>
-            ✗ {error}
-          </p>
+          <p style={{ fontFamily: FB, fontSize: 12, color: '#EF4444', margin: '8px 0 0' }}>✗ {error}</p>
         )}
       </div>
 
-      {/* Action button */}
+      {/* Action */}
       <div style={{ flexShrink: 0 }}>
         {isComplete && project.projectId && (
           <a
             href={`/build-ai/project/${project.projectId}`}
             style={{
               display: 'inline-block',
-              fontFamily: FD, fontSize: 13, fontWeight: 600,
-              color: '#64748B',
-              background: 'rgba(255,255,255,0.04)',
-              border: `1px solid ${BORDER}`,
+              fontFamily: FV, fontSize: 13, fontWeight: 700,
+              color: INK_SOFT,
+              background: WINDOW_ALT,
+              border: `2px solid ${BORDER}`,
               borderRadius: 8, padding: '7px 14px',
               textDecoration: 'none',
+              boxShadow: `2px 2px 0 ${BORDER}`,
             }}
           >
             View build
@@ -169,11 +147,11 @@ function ProjectCard({
             style={{
               display: 'inline-block',
               fontFamily: FD, fontSize: 13, fontWeight: 700,
-              color: '#fff',
-              background: bandColor,
+              color: '#fff', background: bandColor,
+              border: `2px solid ${BORDER}`,
               borderRadius: 8, padding: '7px 14px',
               textDecoration: 'none',
-              boxShadow: `0 2px 12px ${bandColor}50`,
+              boxShadow: `3px 3px 0 ${BORDER}`,
             }}
           >
             Continue →
@@ -185,11 +163,11 @@ function ProjectCard({
             disabled={starting}
             style={{
               fontFamily: FD, fontSize: 13, fontWeight: 700,
-              color: '#fff',
-              background: starting ? `${bandColor}80` : bandColor,
-              border: 'none', borderRadius: 8, padding: '7px 14px',
+              color: '#fff', background: starting ? `${bandColor}80` : bandColor,
+              border: `2px solid ${BORDER}`,
+              borderRadius: 8, padding: '7px 14px',
               cursor: starting ? 'not-allowed' : 'pointer',
-              boxShadow: starting ? 'none' : `0 2px 12px ${bandColor}50`,
+              boxShadow: starting ? 'none' : `3px 3px 0 ${BORDER}`,
             }}
           >
             {starting ? '…' : 'Start'}
@@ -214,38 +192,8 @@ function DeployedUrlSection({
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Pick the first complete project to attach the URL to
   const targetProject = projects.find(p => p.status === 'complete' && p.projectId != null)
-
   if (!targetProject?.projectId) return null
-
-  if (existingUrl && !saved) {
-    return (
-      <div style={{
-        background: SURFACE, border: `1px solid ${bandColor}30`,
-        borderRadius: 14, padding: '20px 22px',
-      }}>
-        <span style={{
-          fontFamily: FM, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-          textTransform: 'uppercase', color: bandColor,
-          display: 'block', marginBottom: 12,
-        }}>
-          Deployed
-        </span>
-        <a
-          href={existingUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            fontFamily: FB, fontSize: 14, color: '#93C5FD',
-            wordBreak: 'break-all',
-          }}
-        >
-          {existingUrl}
-        </a>
-      </div>
-    )
-  }
 
   async function handleSave() {
     if (!url.trim() || !targetProject?.projectId) return
@@ -266,26 +214,28 @@ function DeployedUrlSection({
     }
   }
 
-  if (saved) {
+  if ((existingUrl && !saved) || saved) {
+    const displayUrl = saved ? url : existingUrl!
     return (
       <div style={{
-        background: SURFACE, border: `1px solid ${bandColor}30`,
+        background: WINDOW, border: `2px solid ${BORDER}`,
         borderRadius: 14, padding: '20px 22px',
+        boxShadow: `4px 4px 0 ${BORDER}`,
       }}>
         <span style={{
-          fontFamily: FM, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-          textTransform: 'uppercase', color: bandColor,
-          display: 'block', marginBottom: 8,
+          fontFamily: FV, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
+          color: bandColor, display: 'block', marginBottom: 10,
+          WebkitTextStroke: `0.4px ${BORDER}`,
         }}>
-          Deployed
+          DEPLOYED ✓
         </span>
         <a
-          href={url}
+          href={displayUrl}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontFamily: FB, fontSize: 14, color: '#93C5FD', wordBreak: 'break-all' }}
+          style={{ fontFamily: FB, fontSize: 13, color: bandColor, wordBreak: 'break-all' }}
         >
-          {url}
+          {displayUrl}
         </a>
       </div>
     )
@@ -293,17 +243,17 @@ function DeployedUrlSection({
 
   return (
     <div style={{
-      background: SURFACE, border: `1px solid ${BORDER}`,
+      background: WINDOW, border: `2px solid ${BORDER}`,
       borderRadius: 14, padding: '20px 22px',
+      boxShadow: `4px 4px 0 ${BORDER}`,
     }}>
       <span style={{
-        fontFamily: FM, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-        textTransform: 'uppercase', color: '#64748B',
-        display: 'block', marginBottom: 6,
+        fontFamily: FV, fontSize: 13, fontWeight: 700, letterSpacing: '0.05em',
+        color: INK_SOFT, display: 'block', marginBottom: 6,
       }}>
-        Share what you built (optional)
+        SHARE WHAT YOU BUILT (OPTIONAL)
       </span>
-      <p style={{ fontFamily: FB, fontSize: 13, color: '#4B5563', margin: '0 0 14px', lineHeight: 1.5 }}>
+      <p style={{ fontFamily: FB, fontSize: 13, color: INK_SOFT, margin: '0 0 14px', lineHeight: 1.5 }}>
         Add a link to what you deployed — it becomes part of your level record.
       </p>
       <div style={{ display: 'flex', gap: 10 }}>
@@ -313,9 +263,9 @@ function DeployedUrlSection({
           onChange={e => setUrl(e.target.value)}
           placeholder="https://your-deployed-app.com"
           style={{
-            flex: 1, background: '#0F0F14', border: `1px solid rgba(255,255,255,0.1)`,
+            flex: 1, background: WINDOW_ALT, border: `2px solid ${BORDER}`,
             borderRadius: 8, padding: '9px 14px',
-            fontFamily: FB, fontSize: 13, color: '#F8FAFC',
+            fontFamily: FB, fontSize: 13, color: INK,
             outline: 'none',
           }}
           onKeyDown={e => { if (e.key === 'Enter') handleSave() }}
@@ -325,17 +275,17 @@ function DeployedUrlSection({
           disabled={saving || !url.trim()}
           style={{
             fontFamily: FD, fontSize: 13, fontWeight: 700,
-            color: '#fff', background: saving ? `${bandColor}80` : bandColor,
-            border: 'none', borderRadius: 8, padding: '9px 18px',
+            color: '#fff', background: (saving || !url.trim()) ? `${bandColor}60` : bandColor,
+            border: `2px solid ${BORDER}`, borderRadius: 8, padding: '9px 18px',
             cursor: (saving || !url.trim()) ? 'not-allowed' : 'pointer',
-            flexShrink: 0,
+            flexShrink: 0, boxShadow: `3px 3px 0 ${BORDER}`,
           }}
         >
           {saving ? '…' : 'Save'}
         </button>
       </div>
       {error && (
-        <p style={{ fontFamily: FB, fontSize: 12, color: '#F87171', margin: '8px 0 0' }}>✗ {error}</p>
+        <p style={{ fontFamily: FB, fontSize: 12, color: '#EF4444', margin: '8px 0 0' }}>✗ {error}</p>
       )}
     </div>
   )

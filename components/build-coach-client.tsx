@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import type { CurriculumNudge } from '@/lib/leveling'
 
 const FD = "var(--font-space-grotesk,'Space Grotesk'),sans-serif"
 const FB = "var(--font-inter,'Inter'),sans-serif"
@@ -32,6 +33,7 @@ interface Props {
   allComplete: false
   isLevelProject?: boolean
   levelBackLink?: string | null
+  curriculumNudge?: CurriculumNudge | null
 }
 
 interface CompleteProps {
@@ -67,7 +69,7 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
     )
   }
 
-  const { projectId, projectTitle, step, currentStepNumber, totalSteps } = props
+  const { projectId, projectTitle, step, currentStepNumber, totalSteps, curriculumNudge } = props
   const progressPct = Math.round(((currentStepNumber - 1) / totalSteps) * 100)
 
   const checklistLen = step.verifyChecklist.length
@@ -298,6 +300,51 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
           }}>
             Check off each item to continue
           </p>
+        )}
+
+        {/* Curriculum nudge — step 1 of non-level builds only */}
+        {curriculumNudge && (
+          <div style={{
+            background: SURFACE,
+            borderLeft: '3px solid rgba(124,58,237,0.45)',
+            borderRadius: 12,
+            padding: '16px 20px',
+            marginBottom: 20,
+          }}>
+            <span style={{
+              fontFamily: FM, fontSize: 9, fontWeight: 700, letterSpacing: '0.09em',
+              textTransform: 'uppercase', color: '#7C3AED',
+              display: 'block', marginBottom: 6,
+            }}>
+              Next in your curriculum
+            </span>
+            <p style={{
+              fontFamily: FD, fontSize: 14, fontWeight: 700,
+              color: '#F8FAFC', margin: '0 0 4px', letterSpacing: '-0.01em',
+            }}>
+              Level {curriculumNudge.levelNumber} — {curriculumNudge.projectTitle}
+            </p>
+            <p style={{
+              fontFamily: FB, fontSize: 12, color: '#64748B',
+              margin: '0 0 14px', lineHeight: 1.5,
+            }}>
+              {curriculumNudge.projectDescription}
+            </p>
+            <a
+              href={`/build-ai/levels/${curriculumNudge.levelNumber}`}
+              style={{
+                display: 'inline-block',
+                fontFamily: FD, fontSize: 12, fontWeight: 700,
+                color: '#fff',
+                background: VIOLET,
+                borderRadius: 7, padding: '6px 14px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 10px rgba(124,58,237,0.4)',
+              }}
+            >
+              {curriculumNudge.status === 'in_progress' ? 'Continue →' : 'Start →'}
+            </a>
+          </div>
         )}
 
         {markError && (

@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { buildProjects, projectSteps } from '@/db/schema'
 import { eq, and, asc } from 'drizzle-orm'
 import BuildCoachClient from '@/components/build-coach-client'
+import { findNextCurriculumProject, type CurriculumNudge } from '@/lib/leveling'
 
 export default async function CoachPage({ params }: { params: Promise<{ id: string }> }) {
   const { userId } = await auth()
@@ -36,6 +37,12 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
     ? `/build-ai/levels/${project.levelNumber}`
     : null
 
+  // Nudge card: only on step 1 of a non-level build
+  let curriculumNudge: CurriculumNudge | null = null
+  if (!allComplete && currentStep.stepNumber === 1 && !isLevelProject) {
+    curriculumNudge = await findNextCurriculumProject(userId!)
+  }
+
   if (allComplete) {
     return (
       <BuildCoachClient
@@ -66,6 +73,7 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
       totalSteps={steps.length}
       isLevelProject={isLevelProject}
       levelBackLink={levelBackLink}
+      curriculumNudge={curriculumNudge}
     />
   )
 }

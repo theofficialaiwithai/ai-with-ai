@@ -54,6 +54,79 @@ export type LevelProjectEntry = {
   deployedUrl: string | null
 }
 
+export type CurriculumNudge = {
+  levelNumber: number
+  projectTitle: string
+  projectDescription: string
+  status: 'not_started' | 'in_progress'
+}
+
+// Finds the first incomplete level project starting from the user's current level.
+// Does exactly 2 DB queries regardless of how many levels exist.
+export async function findNextCurriculumProject(userId: string): Promise<CurriculumNudge | null> {
+  const [templates, userProjects] = await Promise.all([
+    db.select()
+      .from(levelProjectTemplates)
+      .orderBy(asc(levelProjectTemplates.levelNumber), asc(levelProjectTemplates.projectNumber)),
+    db.select({
+      levelNumber: buildProjects.levelNumber,
+      levelProjectNumber: buildProjects.levelProjectNumber,
+      status: buildProjects.status,
+    })
+      .from(buildProjects)
+      .where(and(
+        eq(buildProjects.userId, userId),
+        eq(buildProjects.path, 'level_project'),
+      )),
+  ])
+
+  // "levelNumber:projectNumber" → status
+  const statusMap = new Map<string, string>()
+  for (const p of userProjects) {
+    if (p.levelNumber != null && p.levelProjectNumber != null) {
+      statusMap.set(`${p.levelNumber}:${p.levelProjectNumber}`, p.status)
+    }
+  }
+
+  // Group templates by level
+  const byLevel = new Map<number, typeof templates>()
+  for (const t of templates) {
+    if (!byLevel.has(t.levelNumber)) byLevel.set(t.levelNumber, [])
+    byLevel.get(t.levelNumber)!.push(t)
+  }
+
+  // Find current level (first level where not all projects are complete)
+  let currentLevel = 10
+  for (let n = 0; n <= 10; n++) {
+    const levelTemplates = byLevel.get(n) ?? []
+    const allDone =
+      levelTemplates.length === 0 ||
+      levelTemplates.every(t => statusMap.get(`${n}:${t.projectNumber}`) === 'complete')
+    if (!allDone) {
+      currentLevel = n
+      break
+    }
+  }
+
+  // Walk from currentLevel upward; return the first non-complete project
+  for (let n = currentLevel; n <= 10; n++) {
+    const levelTemplates = byLevel.get(n) ?? []
+    for (const t of levelTemplates) {
+      const status = statusMap.get(`${n}:${t.projectNumber}`)
+      if (status !== 'complete') {
+        return {
+          levelNumber: n,
+          projectTitle: t.projectTitle,
+          projectDescription: t.projectDescription,
+          status: status != null ? 'in_progress' : 'not_started',
+        }
+      }
+    }
+  }
+
+  return null
+}
+
 export async function getLevelProjectStatus(userId: string, levelNumber: number): Promise<LevelProjectEntry[]> {
   const [templates, projects] = await Promise.all([
     db.select()

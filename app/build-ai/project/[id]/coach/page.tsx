@@ -56,6 +56,17 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
     )
   }
 
+  const completedSteps = steps
+    .filter(s => s.isComplete && s.stepNumber < currentStep.stepNumber)
+    .map(s => ({
+      id: s.id,
+      stepNumber: s.stepNumber,
+      stepName: s.stepName,
+      promptText: s.promptText,
+      verifyChecklist: (s.verifyChecklist as string[]) ?? [],
+      checkedItems: (s.checkedItems as boolean[]) ?? [],
+    }))
+
   return (
     <BuildCoachClient
       allComplete={false}
@@ -69,6 +80,7 @@ export default async function CoachPage({ params }: { params: Promise<{ id: stri
         verifyChecklist: (currentStep.verifyChecklist as string[]) ?? [],
         checkedItems: (currentStep.checkedItems as boolean[]) ?? [],
       }}
+      completedSteps={completedSteps}
       currentStepNumber={currentStep.stepNumber}
       totalSteps={steps.length}
       isLevelProject={isLevelProject}

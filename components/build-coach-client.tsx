@@ -28,6 +28,7 @@ interface Props {
   projectId: number
   projectTitle: string
   step: Step
+  completedSteps: Step[]
   currentStepNumber: number
   totalSteps: number
   allComplete: false
@@ -55,6 +56,9 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
     props.allComplete ? [] : (props.step.checkedItems ?? [])
   )
+  const [viewingStepNumber, setViewingStepNumber] = useState<number>(
+    props.allComplete ? 0 : props.currentStepNumber
+  )
 
   if (props.allComplete) {
     return (
@@ -69,9 +73,16 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
     )
   }
 
-  const { projectId, projectTitle, step, currentStepNumber, totalSteps, curriculumNudge } = props
+  const { projectId, projectTitle, step, completedSteps, currentStepNumber, totalSteps, curriculumNudge } = props
+
+  const isViewingPastStep = viewingStepNumber < currentStepNumber
+  const viewingStep: Step = isViewingPastStep
+    ? (completedSteps.find(s => s.stepNumber === viewingStepNumber) ?? step)
+    : step
+
   const progressPct = Math.round(((currentStepNumber - 1) / totalSteps) * 100)
 
+  // Active-step checklist state
   const checklistLen = step.verifyChecklist.length
   const allItemsChecked = checklistLen === 0 || (
     checkedItems.length === checklistLen && checkedItems.every(v => v === true)
@@ -79,7 +90,6 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
   const canMarkDone = allItemsChecked && !marking && !isPending
 
   async function handleToggleItem(index: number, checked: boolean) {
-    // Optimistic update
     setCheckedItems(prev => {
       const next = step.verifyChecklist.map((_, i) => (i === index ? checked : (prev[i] ?? false)))
       return next
@@ -99,14 +109,14 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
     }
   }
 
-  async function handleCopy() {
+  async function handleCopy(text: string) {
     try {
-      await navigator.clipboard.writeText(step.promptText)
+      await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
       const el = document.createElement('textarea')
-      el.value = step.promptText
+      el.value = text
       document.body.appendChild(el)
       el.select()
       document.execCommand('copy')
@@ -136,6 +146,12 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
     }
   }
 
+  // Reset copy state when switching steps
+  function goToStep(n: number) {
+    setCopied(false)
+    setViewingStepNumber(n)
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#F8FAFC' }}>
 
@@ -154,9 +170,10 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
         background: 'rgba(15,15,20,0.9)', backdropFilter: 'blur(20px)',
         borderBottom: `1px solid ${BORDER}`,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 28px',
+        padding: '0 28px', gap: 16,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        {/* Left: breadcrumb */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexShrink: 0 }}>
           <a
             href={`/build-ai/project/${projectId}`}
             style={{ fontFamily: FD, fontWeight: 600, fontSize: 13, color: '#94A3B8', textDecoration: 'none' }}
@@ -168,26 +185,98 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
           <span style={{ color: '#374151', fontSize: 11 }}>/</span>
           <span style={{ fontFamily: FD, fontSize: 13, color: '#F8FAFC', fontWeight: 600 }}>Build Coach</span>
         </div>
-        <span style={{ fontFamily: FM, fontSize: 11, color: '#4A5568' }}>
-          Step {currentStepNumber} of {totalSteps}
-        </span>
+
+        {/* Right: step navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* Dots for completed steps */}
+          {completedSteps.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {completedSteps.map(s => {
+                const isActive = viewingStepNumber === s.stepNumber
+                return (
+                  <button
+                    key={s.stepNumber}
+                    onClick={() => goToStep(s.stepNumber)}
+                    title={`Step ${s.stepNumber}: ${s.stepName}`}
+                    style={{
+                      width: 24, height: 24, borderRadius: '50%',
+                      background: isActive ? VIOLET : 'rgba(124,58,237,0.12)',
+                      border: `1.5px solid ${isActive ? VIOLET : 'rgba(124,58,237,0.3)'}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontFamily: FM, fontSize: 10, fontWeight: 700,
+                      color: isActive ? '#fff' : '#7C3AED',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {s.stepNumber}
+                  </button>
+                )
+              })}
+              <span style={{ color: '#374151', fontSize: 11, marginLeft: 2 }}>·</span>
+            </div>
+          )}
+
+          {/* Current step indicator */}
+          <span
+            style={{
+              fontFamily: FM, fontSize: 11,
+              color: isViewingPastStep ? '#4A5568' : '#94A3B8',
+              cursor: isViewingPastStep ? 'pointer' : 'default',
+              textDecoration: isViewingPastStep ? 'underline' : 'none',
+              textDecorationColor: '#4A5568',
+            }}
+            onClick={isViewingPastStep ? () => goToStep(currentStepNumber) : undefined}
+            title={isViewingPastStep ? 'Back to current step' : undefined}
+          >
+            {isViewingPastStep
+              ? `Step ${currentStepNumber} of ${totalSteps} ↩`
+              : `Step ${currentStepNumber} of ${totalSteps}`}
+          </span>
+        </div>
       </nav>
 
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '48px 24px 100px' }}>
+
+        {/* Past-step banner */}
+        {isViewingPastStep && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'rgba(124,58,237,0.06)', border: `1px solid rgba(124,58,237,0.18)`,
+            borderRadius: 10, padding: '10px 16px', marginBottom: 28,
+          }}>
+            <span style={{ fontFamily: FM, fontSize: 11, color: '#7C3AED', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              Viewing completed step {viewingStepNumber}
+            </span>
+            <button
+              onClick={() => goToStep(currentStepNumber)}
+              style={{
+                fontFamily: FD, fontSize: 12, fontWeight: 700, color: '#fff',
+                background: VIOLET, border: 'none', borderRadius: 7,
+                padding: '5px 12px', cursor: 'pointer',
+              }}
+            >
+              Back to current step →
+            </button>
+          </div>
+        )}
 
         {/* Step header */}
         <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
             <span style={{
               flexShrink: 0, width: 36, height: 36, borderRadius: '50%',
-              background: 'rgba(124,58,237,0.15)', border: `1px solid rgba(124,58,237,0.4)`,
+              background: isViewingPastStep ? 'rgba(16,185,129,0.12)' : 'rgba(124,58,237,0.15)',
+              border: `1px solid ${isViewingPastStep ? 'rgba(16,185,129,0.4)' : 'rgba(124,58,237,0.4)'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontFamily: FM, fontSize: 13, fontWeight: 700, color: '#C4B5FD',
+              fontFamily: FM, fontSize: 13, fontWeight: 700,
+              color: isViewingPastStep ? '#10B981' : '#C4B5FD',
             }}>
-              {currentStepNumber}
+              {viewingStep.stepNumber}
             </span>
             <h1 style={{ fontFamily: FS, fontSize: 22, fontWeight: 700, color: '#F8FAFC', margin: 0 }}>
-              {step.stepName}
+              {viewingStep.stepName}
             </h1>
           </div>
         </div>
@@ -205,7 +294,7 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
               Claude Code Prompt
             </span>
             <button
-              onClick={handleCopy}
+              onClick={() => handleCopy(viewingStep.promptText)}
               style={{
                 background: copied ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.04)',
                 border: `1px solid ${copied ? 'rgba(16,185,129,0.3)' : BORDER}`,
@@ -225,150 +314,221 @@ export default function BuildCoachClient(props: Props | CompleteProps) {
             whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             maxHeight: 420, overflowY: 'auto',
           }}>
-            {step.promptText}
+            {viewingStep.promptText}
           </pre>
         </div>
 
-        {/* Verify checklist — required checkboxes */}
-        {step.verifyChecklist.length > 0 && (
-          <div style={{
-            background: SURFACE, border: `1px solid ${allItemsChecked ? 'rgba(16,185,129,0.25)' : BORDER}`,
-            borderRadius: 16, padding: '20px 22px', marginBottom: 16,
-            transition: 'border-color 0.2s',
-          }}>
-            <p style={{
-              fontFamily: FM, fontSize: 10, fontWeight: 600, color: '#64748B',
-              textTransform: 'uppercase', letterSpacing: '0.08em',
-              margin: '0 0 14px',
+        {/* Verify checklist */}
+        {viewingStep.verifyChecklist.length > 0 && (
+          isViewingPastStep ? (
+            /* Read-only completed checklist */
+            <div style={{
+              background: SURFACE, border: `1px solid rgba(16,185,129,0.2)`,
+              borderRadius: 16, padding: '20px 22px', marginBottom: 32,
             }}>
-              Before marking done, verify:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {step.verifyChecklist.map((item, i) => {
-                const isChecked = checkedItems[i] === true
-                return (
-                  <label
-                    key={i}
-                    style={{
-                      display: 'flex', alignItems: 'flex-start', gap: 10,
-                      cursor: 'pointer', userSelect: 'none',
-                    }}
-                  >
-                    <span
-                      role="checkbox"
-                      aria-checked={isChecked}
-                      onClick={() => handleToggleItem(i, !isChecked)}
-                      style={{
+              <p style={{
+                fontFamily: FM, fontSize: 10, fontWeight: 600, color: '#64748B',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                margin: '0 0 14px',
+              }}>
+                Verified:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {viewingStep.verifyChecklist.map((item, i) => {
+                  const isChecked = viewingStep.checkedItems[i] !== false
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <span style={{
                         flexShrink: 0, width: 18, height: 18, marginTop: 2,
-                        border: `1.5px solid ${isChecked ? '#10B981' : 'rgba(124,58,237,0.4)'}`,
+                        border: `1.5px solid ${isChecked ? '#10B981' : 'rgba(100,116,139,0.4)'}`,
                         borderRadius: 4,
-                        background: isChecked ? 'rgba(16,185,129,0.15)' : 'rgba(124,58,237,0.06)',
+                        background: isChecked ? 'rgba(16,185,129,0.15)' : 'transparent',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'all 0.15s',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isChecked && (
-                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                          <path d="M2 5.5l2.5 2.5 4.5-5" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </span>
-                    <span
-                      onClick={() => handleToggleItem(i, !isChecked)}
-                      style={{
+                      }}>
+                        {isChecked && (
+                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                            <path d="M2 5.5l2.5 2.5 4.5-5" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <span style={{
                         fontFamily: FB, fontSize: 13.5, lineHeight: 1.6,
-                        color: isChecked ? '#64748B' : '#94A3B8',
+                        color: '#64748B',
                         textDecoration: isChecked ? 'line-through' : 'none',
-                        transition: 'color 0.15s',
+                      }}>
+                        {item}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Interactive checklist for active step */
+            <div style={{
+              background: SURFACE, border: `1px solid ${allItemsChecked ? 'rgba(16,185,129,0.25)' : BORDER}`,
+              borderRadius: 16, padding: '20px 22px', marginBottom: 16,
+              transition: 'border-color 0.2s',
+            }}>
+              <p style={{
+                fontFamily: FM, fontSize: 10, fontWeight: 600, color: '#64748B',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+                margin: '0 0 14px',
+              }}>
+                Before marking done, verify:
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {step.verifyChecklist.map((item, i) => {
+                  const isChecked = checkedItems[i] === true
+                  return (
+                    <label
+                      key={i}
+                      style={{
+                        display: 'flex', alignItems: 'flex-start', gap: 10,
+                        cursor: 'pointer', userSelect: 'none',
                       }}
                     >
-                      {item}
-                    </span>
-                  </label>
-                )
-              })}
+                      <span
+                        role="checkbox"
+                        aria-checked={isChecked}
+                        onClick={() => handleToggleItem(i, !isChecked)}
+                        style={{
+                          flexShrink: 0, width: 18, height: 18, marginTop: 2,
+                          border: `1.5px solid ${isChecked ? '#10B981' : 'rgba(124,58,237,0.4)'}`,
+                          borderRadius: 4,
+                          background: isChecked ? 'rgba(16,185,129,0.15)' : 'rgba(124,58,237,0.06)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'all 0.15s',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isChecked && (
+                          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+                            <path d="M2 5.5l2.5 2.5 4.5-5" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                      <span
+                        onClick={() => handleToggleItem(i, !isChecked)}
+                        style={{
+                          fontFamily: FB, fontSize: 13.5, lineHeight: 1.6,
+                          color: isChecked ? '#64748B' : '#94A3B8',
+                          textDecoration: isChecked ? 'line-through' : 'none',
+                          transition: 'color 0.15s',
+                        }}
+                      >
+                        {item}
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )
         )}
 
-        {/* Helper hint when checklist incomplete */}
-        {!allItemsChecked && step.verifyChecklist.length > 0 && (
-          <p style={{
-            fontFamily: FB, fontSize: 12, color: '#4B5563',
-            margin: '0 0 16px', textAlign: 'center',
-          }}>
-            Check off each item to continue
-          </p>
-        )}
+        {/* Active-step only: hint + nudge + mark done */}
+        {!isViewingPastStep && (
+          <>
+            {!allItemsChecked && step.verifyChecklist.length > 0 && (
+              <p style={{
+                fontFamily: FB, fontSize: 12, color: '#4B5563',
+                margin: '0 0 16px', textAlign: 'center',
+              }}>
+                Check off each item to continue
+              </p>
+            )}
 
-        {/* Curriculum nudge — step 1 of non-level builds only */}
-        {curriculumNudge && (
-          <div style={{
-            background: SURFACE,
-            borderLeft: '3px solid rgba(124,58,237,0.45)',
-            borderRadius: 12,
-            padding: '16px 20px',
-            marginBottom: 20,
-          }}>
-            <span style={{
-              fontFamily: FM, fontSize: 9, fontWeight: 700, letterSpacing: '0.09em',
-              textTransform: 'uppercase', color: '#7C3AED',
-              display: 'block', marginBottom: 6,
-            }}>
-              Next in your curriculum
-            </span>
-            <p style={{
-              fontFamily: FD, fontSize: 14, fontWeight: 700,
-              color: '#F8FAFC', margin: '0 0 4px', letterSpacing: '-0.01em',
-            }}>
-              Level {curriculumNudge.levelNumber} — {curriculumNudge.projectTitle}
-            </p>
-            <p style={{
-              fontFamily: FB, fontSize: 12, color: '#64748B',
-              margin: '0 0 14px', lineHeight: 1.5,
-            }}>
-              {curriculumNudge.projectDescription}
-            </p>
-            <a
-              href={`/build-ai/levels/${curriculumNudge.levelNumber}`}
+            {curriculumNudge && (
+              <div style={{
+                background: SURFACE,
+                borderLeft: '3px solid rgba(124,58,237,0.45)',
+                borderRadius: 12,
+                padding: '16px 20px',
+                marginBottom: 20,
+              }}>
+                <span style={{
+                  fontFamily: FM, fontSize: 9, fontWeight: 700, letterSpacing: '0.09em',
+                  textTransform: 'uppercase', color: '#7C3AED',
+                  display: 'block', marginBottom: 6,
+                }}>
+                  Next in your curriculum
+                </span>
+                <p style={{
+                  fontFamily: FD, fontSize: 14, fontWeight: 700,
+                  color: '#F8FAFC', margin: '0 0 4px', letterSpacing: '-0.01em',
+                }}>
+                  Level {curriculumNudge.levelNumber} — {curriculumNudge.projectTitle}
+                </p>
+                <p style={{
+                  fontFamily: FB, fontSize: 12, color: '#64748B',
+                  margin: '0 0 14px', lineHeight: 1.5,
+                }}>
+                  {curriculumNudge.projectDescription}
+                </p>
+                <a
+                  href={`/build-ai/levels/${curriculumNudge.levelNumber}`}
+                  style={{
+                    display: 'inline-block',
+                    fontFamily: FD, fontSize: 12, fontWeight: 700,
+                    color: '#fff',
+                    background: VIOLET,
+                    borderRadius: 7, padding: '6px 14px',
+                    textDecoration: 'none',
+                    boxShadow: '0 2px 10px rgba(124,58,237,0.4)',
+                  }}
+                >
+                  {curriculumNudge.status === 'in_progress' ? 'Continue →' : 'Start →'}
+                </a>
+              </div>
+            )}
+
+            {markError && (
+              <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12 }}>✗ {markError}</p>
+            )}
+            <button
+              onClick={canMarkDone ? handleMarkDone : undefined}
+              disabled={!canMarkDone}
               style={{
-                display: 'inline-block',
-                fontFamily: FD, fontSize: 12, fontWeight: 700,
-                color: '#fff',
-                background: VIOLET,
-                borderRadius: 7, padding: '6px 14px',
-                textDecoration: 'none',
-                boxShadow: '0 2px 10px rgba(124,58,237,0.4)',
+                width: '100%',
+                background: !canMarkDone ? 'rgba(255,255,255,0.05)' : VIOLET,
+                color: !canMarkDone ? '#374151' : '#fff',
+                border: `1px solid ${!canMarkDone ? 'rgba(255,255,255,0.06)' : 'transparent'}`,
+                borderRadius: 12,
+                padding: '15px 0',
+                fontFamily: FD, fontWeight: 700, fontSize: 16,
+                cursor: !canMarkDone ? 'not-allowed' : 'pointer',
+                boxShadow: !canMarkDone ? 'none' : '0 4px 24px rgba(124,58,237,0.4)',
+                transition: 'all 0.2s',
+                letterSpacing: '-0.01em',
               }}
             >
-              {curriculumNudge.status === 'in_progress' ? 'Continue →' : 'Start →'}
-            </a>
-          </div>
+              {(marking || isPending) ? '✦ Saving…' : currentStepNumber === totalSteps ? 'Mark Done & Finish →' : 'Mark Done & Continue →'}
+            </button>
+          </>
         )}
 
-        {markError && (
-          <p style={{ fontFamily: FB, fontSize: 13, color: '#F87171', marginBottom: 12 }}>✗ {markError}</p>
+        {/* Past-step: "back to current" footer button */}
+        {isViewingPastStep && (
+          <button
+            onClick={() => goToStep(currentStepNumber)}
+            style={{
+              width: '100%',
+              background: 'rgba(124,58,237,0.1)',
+              color: '#C4B5FD',
+              border: `1px solid rgba(124,58,237,0.25)`,
+              borderRadius: 12,
+              padding: '15px 0',
+              fontFamily: FD, fontWeight: 700, fontSize: 16,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              letterSpacing: '-0.01em',
+            }}
+          >
+            Back to current step →
+          </button>
         )}
-        <button
-          onClick={canMarkDone ? handleMarkDone : undefined}
-          disabled={!canMarkDone}
-          style={{
-            width: '100%',
-            background: !canMarkDone ? 'rgba(255,255,255,0.05)' : VIOLET,
-            color: !canMarkDone ? '#374151' : '#fff',
-            border: `1px solid ${!canMarkDone ? 'rgba(255,255,255,0.06)' : 'transparent'}`,
-            borderRadius: 12,
-            padding: '15px 0',
-            fontFamily: FD, fontWeight: 700, fontSize: 16,
-            cursor: !canMarkDone ? 'not-allowed' : 'pointer',
-            boxShadow: !canMarkDone ? 'none' : '0 4px 24px rgba(124,58,237,0.4)',
-            transition: 'all 0.2s',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {(marking || isPending) ? '✦ Saving…' : currentStepNumber === totalSteps ? 'Mark Done & Finish →' : 'Mark Done & Continue →'}
-        </button>
+
       </div>
     </div>
   )
@@ -418,7 +578,6 @@ function CompletionScreen({
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
         <div style={{ textAlign: 'center', maxWidth: 480 }}>
 
-          {/* Level-up banner — shown immediately when a level project's completion advances the level */}
           {leveledUp && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,

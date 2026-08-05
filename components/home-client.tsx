@@ -14,6 +14,7 @@ const BLUE = '#5C7CFA'
 const LIME = '#5FD98A'
 const PINK = '#FF5FA8'
 const VIOLET = '#9B7FD1'
+const CORAL = '#FF7B54'
 const INK = '#1B1533'
 const INK_SOFT = '#5A536F'
 const TEXT_DARK = '#ECE9F5'
@@ -25,7 +26,6 @@ const FB = "var(--font-inter,'Inter'),sans-serif"
 const FC = "'Caveat',cursive"
 
 const MARQUEE_TEXT = 'BUILD AI WITH AI ✦ AGENTIC SYSTEMS ✦ SKILLS / ROUTINES / AGENTS / OS ✦ BUILT FOR YOUR NEXT LEVEL ✦ '
-
 const BG_IMAGE = 'linear-gradient(180deg, #C9AEEA 0%, #9B7FD1 100%), linear-gradient(rgba(70,50,110,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(70,50,110,0.14) 1px, transparent 1px)'
 const BG_SIZE = '100% 100%, 40px 40px, 40px 40px'
 
@@ -41,34 +41,126 @@ function TrafficLights({ size }: { size: number }) {
   )
 }
 
-function WhyCard({ bubble, icon, iconBg, title, desc }: {
-  bubble: string; icon: string; iconBg: string; title: string; desc: string
+function WhyCard({ question, desc, cta }: { question: string; desc: string; cta: string }) {
+  return (
+    <div style={{
+      background: '#F0EEF8', border: `2.5px solid ${BORDER}`, borderRadius: 16,
+      overflow: 'hidden', boxShadow: `6px 6px 0 ${BORDER}`, display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{
+        background: 'linear-gradient(90deg, #FF9EBD 0%, #FF6B9D 100%)',
+        borderBottom: `2.5px solid ${BORDER}`,
+        padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
+        fontFamily: FV, fontWeight: 700, fontSize: 13, color: '#fff', letterSpacing: '0.06em',
+      }}>
+        <TrafficLights size={9} />
+        SYSTEM MESSAGE
+      </div>
+      <div style={{ padding: '22px 20px', display: 'flex', gap: 14, flex: 1 }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: '50%', background: INK,
+          border: `2px solid ${BORDER}`, display: 'flex', alignItems: 'center',
+          justifyContent: 'center', flexShrink: 0,
+          fontFamily: FD, fontWeight: 800, fontSize: 16, color: '#fff',
+        }}>i</div>
+        <div>
+          <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 15.5, color: INK, marginBottom: 10, lineHeight: 1.3 }}>
+            {question}
+          </div>
+          <div style={{ fontSize: 12.5, color: INK_SOFT, lineHeight: 1.55, fontFamily: FB }}>
+            {desc}
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{
+          background: INK, color: '#fff', fontFamily: FD, fontWeight: 700, fontSize: 11.5,
+          padding: '8px 14px', border: `2px solid ${BORDER}`, borderRadius: 8,
+          boxShadow: `2px 2px 0 ${BORDER}`, letterSpacing: '0.04em',
+        }}>{cta}</div>
+        <div style={{
+          background: '#fff', color: INK_SOFT, fontFamily: FD, fontWeight: 600, fontSize: 11.5,
+          padding: '8px 14px', border: `2px solid ${BORDER}`, borderRadius: 8,
+        }}>CANCEL</div>
+      </div>
+    </div>
+  )
+}
+
+function FeatureCard({ icon, iconBg, name, sub }: {
+  icon: string; iconBg: string; name: string; sub: string
+}) {
+  return (
+    <div style={{
+      background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 12,
+      overflow: 'hidden', boxShadow: `4px 4px 0 ${BORDER}`,
+    }}>
+      <div style={{
+        background: iconBg, height: 86, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', fontSize: 26,
+        borderBottom: `2px solid ${BORDER}`,
+      }}>{icon}</div>
+      <div style={{ padding: '11px 12px 13px' }}>
+        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12.5, color: INK, marginBottom: 3, lineHeight: 1.25 }}>{name}</div>
+        <div style={{ fontFamily: FV, fontSize: 12, color: INK_SOFT, letterSpacing: '0.02em' }}>{sub}</div>
+      </div>
+    </div>
+  )
+}
+
+function PaintCard({ name, desc, gradient, icon, filename }: {
+  name: string; desc: string; gradient: string; icon: string; filename: string
 }) {
   return (
     <div style={{
       background: WINDOW, border: `2.5px solid ${BORDER}`, borderRadius: 14,
-      overflow: 'hidden', boxShadow: `5px 5px 0 ${BORDER}`, display: 'flex', flexDirection: 'column',
+      overflow: 'hidden', boxShadow: `5px 5px 0 ${BORDER}`,
     }}>
       <div style={{
-        background: WINDOW_ALT, borderBottom: `2.5px solid ${BORDER}`,
-        padding: '20px 16px', position: 'relative', minHeight: 108,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(180deg, #F0EEF8 0%, #D8D4EC 100%)',
+        borderBottom: `2px solid ${BORDER}`,
+        padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8,
+        fontFamily: FV, fontSize: 11.5, color: INK, fontWeight: 700, letterSpacing: '0.03em',
       }}>
+        <TrafficLights size={8} />
+        PAINT — {filename}
+      </div>
+      <div style={{ display: 'flex' }}>
         <div style={{
-          position: 'absolute', top: 14, left: 14, right: 14,
-          background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 8,
-          padding: '7px 10px', fontSize: 11, color: INK, fontWeight: 600,
-          boxShadow: `2px 2px 0 ${BORDER}`, fontFamily: FB,
-        }}>{bubble}</div>
+          width: 32, flexShrink: 0, background: '#E8E4F0', borderRight: `1.5px solid ${BORDER}`,
+          padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center',
+        }}>
+          {[
+            { bg: GOLD, label: '✏' },
+            { bg: '#fff', label: '◫' },
+            { bg: '#fff', label: '○' },
+            { bg: '#fff', label: '□' },
+            { bg: '#fff', label: '⧖' },
+          ].map((t, i) => (
+            <div key={i} style={{
+              width: 22, height: 22, border: `1.5px solid ${BORDER}`, borderRadius: 4,
+              background: t.bg, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 9, color: INK, fontWeight: 700,
+            }}>{t.label}</div>
+          ))}
+        </div>
         <div style={{
-          width: 26, height: 26, borderRadius: 6, background: iconBg,
-          border: `1.5px solid ${BORDER}`, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', fontSize: 12, marginTop: 30,
+          flex: 1, background: gradient, minHeight: 118,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 38,
         }}>{icon}</div>
       </div>
-      <div style={{ padding: '18px 18px 20px' }}>
-        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: INK, marginBottom: 8 }}>{title}</div>
-        <div style={{ fontSize: 12.5, color: INK_SOFT, lineHeight: 1.55, fontFamily: FB }}>{desc}</div>
+      <div style={{ padding: '12px 14px', borderTop: `1.5px solid ${BORDER}` }}>
+        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 13.5, color: INK, marginBottom: 5 }}>{name}</div>
+        <div style={{ fontSize: 11.5, color: INK_SOFT, lineHeight: 1.45, fontFamily: FB }}>{desc}</div>
+      </div>
+      <div style={{
+        borderTop: `1.5px solid ${BORDER}`, padding: '6px 10px',
+        display: 'flex', gap: 4, background: '#F0EEF8',
+      }}>
+        {[PINK, GOLD, BLUE, LIME, CORAL, INK, '#fff', VIOLET].map((c, i) => (
+          <div key={i} style={{ width: 13, height: 13, background: c, border: `1.5px solid ${BORDER}`, borderRadius: 2 }} />
+        ))}
       </div>
     </div>
   )
@@ -245,8 +337,10 @@ function FixedFooter({ marqueeFull, time }: { marqueeFull: string; time: string 
           {[
             { label: 'Hero', color: VIOLET },
             { label: 'Why', color: PINK },
+            { label: 'Features', color: GOLD },
             { label: 'Guided Build', color: LIME },
             { label: 'How It Works', color: PINK },
+            { label: 'Built With', color: CORAL },
             { label: 'Pricing', color: GOLD },
             { label: 'FAQ', color: BLUE },
           ].map(tab => (
@@ -265,6 +359,88 @@ function FixedFooter({ marqueeFull, time }: { marqueeFull: string; time: string 
     </div>
   )
 }
+
+/* ── Feature data ── */
+
+const FEATURES = [
+  { icon: '💬', iconBg: BLUE,   name: 'Idea Intake Chat',          sub: 'PRD chat' },
+  { icon: '📋', iconBg: GOLD,   name: 'Auto-Generated PRD',        sub: 'Auto PRD' },
+  { icon: '⚡', iconBg: VIOLET, name: 'Agentify My App',           sub: 'App audit' },
+  { icon: '🛡️', iconBg: PINK,   name: 'Domain-Risk Check',         sub: 'Risk check' },
+  { icon: '🗺️', iconBg: LIME,   name: 'Build Map',                 sub: 'Build steps' },
+  { icon: '🎯', iconBg: CORAL,  name: 'Build Coach',               sub: 'Step coach' },
+  { icon: '🔧', iconBg: GOLD,   name: 'Tool 101',                  sub: 'Tool setup' },
+  { icon: '📚', iconBg: BLUE,   name: 'Living Documentation',      sub: 'Auto docs' },
+  { icon: '⚖️', iconBg: VIOLET, name: 'Decision-Rights Matrix',    sub: 'Governance doc' },
+  { icon: '✅', iconBg: LIME,   name: 'Auto-Suggest Checkpoints',  sub: 'Checkpoints' },
+  { icon: '📶', iconBg: PINK,   name: 'Level Map',                 sub: 'Skill levels' },
+  { icon: '🧠', iconBg: CORAL,  name: 'Persistent Project Memory', sub: 'Project memory' },
+  { icon: '🚀', iconBg: GOLD,   name: 'Build Your Riskiest Page',  sub: 'Free trial' },
+  { icon: '📤', iconBg: BLUE,   name: 'Multi-Editor Prompt Export',sub: 'Prompt export' },
+  { icon: '📌', iconBg: VIOLET, name: 'Doc-Grounded Prompts',      sub: 'Grounded AI' },
+  { icon: '🔔', iconBg: PINK,   name: 'Stalled-Project Nudge',     sub: 'Re-engagement' },
+  { icon: '💳', iconBg: LIME,   name: 'Subscription & Billing',    sub: 'Paid tier' },
+  { icon: '🏠', iconBg: CORAL,  name: 'Dashboard',                 sub: 'Project hub' },
+]
+
+const BUILT_WITH = [
+  {
+    name: 'Briefly Brilliant',
+    desc: 'LSAT prep app with diagnostic scoring and personalized study plans',
+    gradient: 'linear-gradient(135deg, #C9AEEA 0%, #9B7FD1 100%)',
+    icon: '📖',
+    filename: 'BRIEFLY_BRILLIANT.APP',
+  },
+  {
+    name: 'Persist',
+    desc: 'Student engagement platform sending encouragement nudges for self-paced courses',
+    gradient: 'linear-gradient(135deg, #FF9EBD 0%, #FF6B6B 100%)',
+    icon: '⚡',
+    filename: 'PERSIST.APP',
+  },
+  {
+    name: 'Bordermath',
+    desc: 'Visa compliance tracker for stay limits and entry rules across countries',
+    gradient: 'linear-gradient(135deg, #5FD98A 0%, #4ECDC4 100%)',
+    icon: '🌍',
+    filename: 'BORDERMATH.APP',
+  },
+  {
+    name: 'Vibe Labs',
+    desc: 'Skill-assessment platform scoring your Vibe Quotient across five competencies',
+    gradient: 'linear-gradient(135deg, #FFCB33 0%, #FF5FA8 100%)',
+    icon: '🎮',
+    filename: 'VIBE_LABS.APP',
+  },
+  {
+    name: 'Skillpath',
+    desc: 'Personalized learning-path app that turns any skill goal into a trackable curriculum',
+    gradient: 'linear-gradient(135deg, #5C7CFA 0%, #9B7FD1 100%)',
+    icon: '🗺️',
+    filename: 'SKILLPATH.APP',
+  },
+  {
+    name: 'Detour',
+    desc: 'Scenario-comparison tool for modeling major life decisions side by side',
+    gradient: 'linear-gradient(135deg, #FFB347 0%, #FF6B9D 100%)',
+    icon: '🔀',
+    filename: 'DETOUR.APP',
+  },
+  {
+    name: 'Pigeon',
+    desc: 'AI email-sequence generator that learns your brand voice for drip campaigns',
+    gradient: 'linear-gradient(135deg, #87CEEB 0%, #5C7CFA 100%)',
+    icon: '🐦',
+    filename: 'PIGEON.APP',
+  },
+  {
+    name: 'The Automated CMO',
+    desc: 'AI marketing platform with nine ready-to-use agents for strategy and content',
+    gradient: 'linear-gradient(135deg, #FFCB33 0%, #FF7B54 100%)',
+    icon: '📣',
+    filename: 'AUTOMATED_CMO.APP',
+  },
+]
 
 /* ── Main component ── */
 
@@ -291,7 +467,6 @@ export default function HomeClient() {
   return (
     <div style={{ minHeight: '100vh', paddingBottom: 120, position: 'relative' }}>
 
-      {/* Fixed background pinned to viewport */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         zIndex: 0, pointerEvents: 'none',
@@ -299,10 +474,8 @@ export default function HomeClient() {
         backgroundSize: BG_SIZE,
       }} />
 
-      {/* Nav */}
       <LandingNav />
 
-      {/* Content */}
       <div style={{ maxWidth: 860, margin: '0 auto', padding: '46px 24px 0', position: 'relative', zIndex: 2 }}>
 
         {/* ── HERO ── */}
@@ -380,7 +553,6 @@ export default function HomeClient() {
           </div>
         </div>
 
-        {/* Uptime chip */}
         <div style={{ textAlign: 'center' }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -410,11 +582,48 @@ export default function HomeClient() {
               Most AI tools answer questions. Build AI with AI takes initiative — planning your build, writing the exact prompts, and getting sharper about your project with every step.
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            <WhyCard bubble="Got your context. No need to repeat it." icon="🧠" iconBg={GOLD} title="Always context-aware" desc="It remembers your project, your stack, and your past decisions — so you never have to re-explain yourself." />
-            <WhyCard bubble="Step 3 marked done ✓" icon="✅" iconBg={LIME} title="Takes real action" desc="Every step comes with the exact prompt to paste and a verification checklist — not just a document." />
-            <WhyCard bubble="Claude Code · Codex · Zapier · Make" icon="🔌" iconBg={BLUE} title="Connects your tools" desc="Plans are written for the tool you actually build in — no translating generic advice into your own stack." />
-            <WhyCard bubble="LEVEL 0 → LEVEL 10" icon="📶" iconBg={PINK} title="Gets better with every level" desc="11 levels, from 'type prompts and hope' to autonomous agents — real skill, not busywork." />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
+            <WhyCard
+              question="Is your context being remembered?"
+              desc="It remembers your project, your stack, and your past decisions — so you never have to re-explain yourself at the start of every session."
+              cta="YES, LOAD MY PROJECT →"
+            />
+            <WhyCard
+              question="Does your AI actually do the work?"
+              desc="Every step comes with the exact prompt to paste and a verification checklist — not just advice you have to translate yourself."
+              cta="YES, BUILD WITH ME →"
+            />
+            <WhyCard
+              question="Is it tuned for your specific tools?"
+              desc="Plans are written for the tool you actually build in — Claude Code, Codex, Zapier, Make — no translating generic advice into your stack."
+              cta="YES, USE MY STACK →"
+            />
+            <WhyCard
+              question="Does it actually get better over time?"
+              desc="11 levels, from 'type prompts and hope' to autonomous agents. Real skills, real builds, not synthetic busywork."
+              cta="YES, LEVEL UP →"
+            />
+          </div>
+        </div>
+
+        {/* ── FEATURES ── */}
+        <div style={{ marginTop: 76 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 30, flexWrap: 'wrap' }}>
+            <div style={{ maxWidth: 480 }}>
+              <span style={{ display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', color: GOLD, marginBottom: 10 }}>Everything inside</span>
+              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, lineHeight: 1.25, color: INK }}>
+                18 features.<br />
+                <span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>One build system.</span>
+              </div>
+            </div>
+            <div style={{ maxWidth: 290, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.6, paddingBottom: 4, fontFamily: FB }}>
+              From your first idea intake to your final deploy — every tool you need to go from zero to shipped is already here.
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+            {FEATURES.map(f => (
+              <FeatureCard key={f.name} icon={f.icon} iconBg={f.iconBg} name={f.name} sub={f.sub} />
+            ))}
           </div>
         </div>
 
@@ -563,6 +772,27 @@ export default function HomeClient() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* ── BUILT WITH ── */}
+        <div style={{ marginTop: 76 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 30, flexWrap: 'wrap' }}>
+            <div style={{ maxWidth: 480 }}>
+              <span style={{ display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', color: CORAL, marginBottom: 10 }}>Built with Build AI with AI</span>
+              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, lineHeight: 1.25, color: INK }}>
+                Real apps,<br />
+                <span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>actually shipped.</span>
+              </div>
+            </div>
+            <div style={{ maxWidth: 290, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.6, paddingBottom: 4, fontFamily: FB }}>
+              Every project below was built using Build AI with AI — from idea intake to deployed app.
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+            {BUILT_WITH.map(p => (
+              <PaintCard key={p.name} name={p.name} desc={p.desc} gradient={p.gradient} icon={p.icon} filename={p.filename} />
+            ))}
           </div>
         </div>
 

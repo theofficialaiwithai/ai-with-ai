@@ -52,7 +52,7 @@ export default function RootLayout({
     >
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=Caveat:wght@600;700&display=swap"
           rel="stylesheet"
         />
       </head>

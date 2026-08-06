@@ -203,21 +203,21 @@ function WhyCard({ question, desc, cta }: { question: string; desc: string; cta:
 function FeatureCard({ k, iconBg, name, sub }: { k: string; iconBg: string; name: string; sub: string }) {
   return (
     <div style={{
-      background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 16,
+      background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 12,
       overflow: 'hidden', boxShadow: `4px 4px 0 ${BORDER}`,
-      padding: 12,
+      padding: 8,
     }}>
       <div style={{
-        background: iconBg, height: 120, display: 'flex',
+        background: iconBg, height: 72, display: 'flex',
         alignItems: 'center', justifyContent: 'center',
-        border: `2px solid ${BORDER}`, borderRadius: 10,
-        marginBottom: 12,
+        border: `2px solid ${BORDER}`, borderRadius: 8,
+        marginBottom: 8,
       }}>
         <FeatureSVGIcon k={k} />
       </div>
-      <div style={{ textAlign: 'center', paddingBottom: 6 }}>
-        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, color: INK, marginBottom: 3, lineHeight: 1.25 }}>{name}</div>
-        <div style={{ fontFamily: FV, fontSize: 13, color: INK_SOFT, letterSpacing: '0.02em' }}>{sub}</div>
+      <div style={{ textAlign: 'center', paddingBottom: 4 }}>
+        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: INK, marginBottom: 2, lineHeight: 1.25 }}>{name}</div>
+        <div style={{ fontFamily: FV, fontSize: 11, color: INK_SOFT, letterSpacing: '0.02em' }}>{sub}</div>
       </div>
     </div>
   )

@@ -31,7 +31,7 @@ const BG_SIZE = '100% 100%, 40px 40px, 40px 40px'
 /* ── Icon helper ── */
 
 function FeatureSVGIcon({ k }: { k: string }) {
-  const p = { fill: 'none' as const, stroke: '#fff', strokeWidth: 2.4, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const p = { fill: 'none' as const, stroke: '#000', strokeWidth: 2.4, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   const L = { ...p }
   const icons: Record<string, React.ReactNode> = {
     chat: <path {...p} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>,
@@ -648,7 +648,7 @@ export default function HomeClient() {
             accent="One build system."
             desc="From your first idea intake to your final deploy — every tool you need to go from zero to shipped is already here."
           />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
             {FEATURES.map(f => <FeatureCard key={f.name} {...f} />)}
           </div>
         </div>

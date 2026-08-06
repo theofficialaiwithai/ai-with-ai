@@ -14,7 +14,6 @@ const BLUE = '#5C7CFA'
 const LIME = '#5FD98A'
 const PINK = '#FF5FA8'
 const VIOLET = '#9B7FD1'
-const CORAL = '#FF7B54'
 const INK = '#1B1533'
 const INK_SOFT = '#5A536F'
 const TEXT_DARK = '#ECE9F5'
@@ -29,6 +28,104 @@ const MARQUEE_TEXT = 'BUILD AI WITH AI ✦ AGENTIC SYSTEMS ✦ SKILLS / ROUTINES
 const BG_IMAGE = 'linear-gradient(180deg, #C9AEEA 0%, #9B7FD1 100%), linear-gradient(rgba(70,50,110,0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(70,50,110,0.14) 1px, transparent 1px)'
 const BG_SIZE = '100% 100%, 40px 40px, 40px 40px'
 
+/* ── Icon helper ── */
+
+function FeatureSVGIcon({ k }: { k: string }) {
+  const p = { fill: 'none' as const, stroke: '#fff', strokeWidth: 2.4, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const L = { ...p }
+  const icons: Record<string, React.ReactNode> = {
+    chat: <path {...p} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>,
+    doc: <><path {...p} d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline {...p} points="14 2 14 8 20 8"/><line {...L} x1="16" y1="13" x2="8" y2="13"/><line {...L} x1="16" y1="17" x2="8" y2="17"/><line {...L} x1="10" y1="9" x2="8" y2="9"/></>,
+    bolt: <polygon {...p} points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+    shield: <path {...p} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>,
+    map: <><polygon {...p} points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line {...L} x1="8" y1="2" x2="8" y2="18"/><line {...L} x1="16" y1="6" x2="16" y2="22"/></>,
+    target: <><circle {...p} cx="12" cy="12" r="10"/><circle {...p} cx="12" cy="12" r="6"/><circle {...p} cx="12" cy="12" r="2"/></>,
+    wrench: <path {...p} d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>,
+    book: <><path {...p} d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path {...p} d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></>,
+    list: <><line {...L} x1="8" y1="6" x2="21" y2="6"/><line {...L} x1="8" y1="12" x2="21" y2="12"/><line {...L} x1="8" y1="18" x2="21" y2="18"/><line {...L} x1="3" y1="6" x2="3.01" y2="6"/><line {...L} x1="3" y1="12" x2="3.01" y2="12"/><line {...L} x1="3" y1="18" x2="3.01" y2="18"/></>,
+    check: <><polyline {...p} points="9 11 12 14 22 4"/><path {...p} d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></>,
+    bars: <><line {...L} x1="6" y1="20" x2="6" y2="14"/><line {...L} x1="12" y1="20" x2="12" y2="4"/><line {...L} x1="18" y1="20" x2="18" y2="10"/><line {...L} x1="2" y1="20" x2="22" y2="20"/></>,
+    db: <><ellipse {...p} cx="12" cy="5" rx="9" ry="3"/><path {...p} d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path {...p} d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></>,
+    rocket: <><path {...p} d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path {...p} d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path {...p} d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path {...p} d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></>,
+    upload: <><path {...p} d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline {...p} points="17 8 12 3 7 8"/><line {...L} x1="12" y1="3" x2="12" y2="15"/></>,
+    pin: <><path {...p} d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle {...p} cx="12" cy="10" r="3"/></>,
+    bell: <><path {...p} d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path {...p} d="M13.73 21a2 2 0 01-3.46 0"/></>,
+    creditcard: <><rect {...p} x="1" y="4" width="22" height="16" rx="2" ry="2"/><line {...L} x1="1" y1="10" x2="23" y2="10"/></>,
+    grid: <><rect {...p} x="3" y="3" width="7" height="7"/><rect {...p} x="14" y="3" width="7" height="7"/><rect {...p} x="14" y="14" width="7" height="7"/><rect {...p} x="3" y="14" width="7" height="7"/></>,
+  }
+  return (
+    <svg viewBox="0 0 24 24" width={38} height={38}>
+      {icons[k] ?? <circle {...p} cx="12" cy="12" r="9"/>}
+    </svg>
+  )
+}
+
+/* ── Data ── */
+
+const FEATURES = [
+  { k: 'chat',       iconBg: BLUE,   name: 'Idea Intake Chat',           sub: 'PRD chat' },
+  { k: 'doc',        iconBg: GOLD,   name: 'Auto-Generated PRD',         sub: 'Auto PRD' },
+  { k: 'bolt',       iconBg: VIOLET, name: 'Agentify My App',            sub: 'App audit' },
+  { k: 'shield',     iconBg: PINK,   name: 'Domain-Risk Check',          sub: 'Risk check' },
+  { k: 'map',        iconBg: LIME,   name: 'Build Map',                  sub: 'Build steps' },
+  { k: 'target',     iconBg: BLUE,   name: 'Build Coach',                sub: 'Step coach' },
+  { k: 'wrench',     iconBg: GOLD,   name: 'Tool 101',                   sub: 'Tool setup' },
+  { k: 'book',       iconBg: VIOLET, name: 'Living Documentation',       sub: 'Auto docs' },
+  { k: 'list',       iconBg: PINK,   name: 'Decision-Rights Matrix',     sub: 'Governance doc' },
+  { k: 'check',      iconBg: LIME,   name: 'Auto-Suggest Checkpoints',   sub: 'Checkpoints' },
+  { k: 'bars',       iconBg: BLUE,   name: 'Level Map',                  sub: 'Skill levels' },
+  { k: 'db',         iconBg: GOLD,   name: 'Persistent Project Memory',  sub: 'Project memory' },
+  { k: 'rocket',     iconBg: VIOLET, name: 'Build Your Riskiest Page',   sub: 'Free trial' },
+  { k: 'upload',     iconBg: PINK,   name: 'Multi-Editor Prompt Export', sub: 'Prompt export' },
+  { k: 'pin',        iconBg: LIME,   name: 'Doc-Grounded Prompts',       sub: 'Grounded AI' },
+  { k: 'bell',       iconBg: BLUE,   name: 'Stalled-Project Nudge',      sub: 'Re-engagement' },
+  { k: 'creditcard', iconBg: GOLD,   name: 'Subscription & Billing',     sub: 'Paid tier' },
+  { k: 'grid',       iconBg: VIOLET, name: 'Dashboard',                  sub: 'Project hub' },
+]
+
+// Free screenshot proxy for public sites — sends the URL to thum.io's servers
+const THUMB = (url: string) =>
+  `https://image.thum.io/get/width/1200/crop/750/noanimate/${url}`
+
+const BUILT_WITH = [
+  {
+    name: 'Skillpath',
+    desc: 'Personalized learning-path app that turns any skill goal into a curated, trackable path of lessons and resources.',
+    screenshot: THUMB('https://skillpath-hazel.vercel.app/'),
+    filename: 'SKILLPATH.APP',
+  },
+  {
+    name: 'Vibe Labs',
+    desc: 'Scores your Vibe Quotient across five competencies, places you in a tier, and hands you a personalized build challenge.',
+    screenshot: THUMB('https://vibe-lab-api-server.vercel.app/'),
+    filename: 'VIBE_LABS.APP',
+  },
+  {
+    name: 'Pigeon',
+    desc: 'AI email-sequence generator that learns your brand voice and builds cohort-based drip campaigns you can export to ConvertKit.',
+    screenshot: THUMB('https://pigeon-gold.vercel.app/'),
+    filename: 'PIGEON.APP',
+  },
+  {
+    name: 'The Automated CMO',
+    desc: 'AI marketing platform that packages strategy, brand, and content toolkits into nine ready-to-use agents.',
+    screenshot: THUMB('https://the-automated-cmo.vercel.app/'),
+    filename: 'AUTOMATED_CMO.APP',
+  },
+  {
+    name: 'Persist',
+    desc: 'Student engagement platform sending encouragement nudges and tracking independent progress.',
+    screenshot: THUMB('https://persist-app.vercel.app/'),
+    filename: 'PERSIST.APP',
+  },
+  {
+    name: 'Bordermath',
+    desc: 'Visa compliance tracker for stay limits and entry rules across the countries you move through.',
+    screenshot: THUMB('https://bordermath-sage.vercel.app/'),
+    filename: 'BORDERMATH.APP',
+  },
+]
+
 /* ── Sub-components ── */
 
 function TrafficLights({ size }: { size: number }) {
@@ -41,6 +138,29 @@ function TrafficLights({ size }: { size: number }) {
   )
 }
 
+function SectionHeader({ label, labelColor, title, accent, desc }: {
+  label: string; labelColor: string; title: string; accent?: string; desc: string
+}) {
+  return (
+    <div style={{ textAlign: 'center', marginBottom: 34 }}>
+      <span style={{
+        display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700,
+        letterSpacing: '0.1em', color: labelColor, marginBottom: 12,
+      }}>{label}</span>
+      <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 32, lineHeight: 1.2, color: INK }}>
+        {title}
+        {accent && (
+          <><br /><span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>{accent}</span></>
+        )}
+      </div>
+      <div style={{
+        maxWidth: 560, margin: '16px auto 0',
+        fontSize: 14, color: INK_SOFT, lineHeight: 1.6, fontFamily: FB,
+      }}>{desc}</div>
+    </div>
+  )
+}
+
 function WhyCard({ question, desc, cta }: { question: string; desc: string; cta: string }) {
   return (
     <div style={{
@@ -48,7 +168,7 @@ function WhyCard({ question, desc, cta }: { question: string; desc: string; cta:
       overflow: 'hidden', boxShadow: `6px 6px 0 ${BORDER}`, display: 'flex', flexDirection: 'column',
     }}>
       <div style={{
-        background: 'linear-gradient(90deg, #FF9EBD 0%, #FF6B9D 100%)',
+        background: 'linear-gradient(90deg, #FF9EBD 0%, #FF5FA8 100%)',
         borderBottom: `2.5px solid ${BORDER}`,
         padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10,
         fontFamily: FV, fontWeight: 700, fontSize: 13, color: '#fff', letterSpacing: '0.06em',
@@ -64,15 +184,11 @@ function WhyCard({ question, desc, cta }: { question: string; desc: string; cta:
           fontFamily: FD, fontWeight: 800, fontSize: 16, color: '#fff',
         }}>i</div>
         <div>
-          <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 15.5, color: INK, marginBottom: 10, lineHeight: 1.3 }}>
-            {question}
-          </div>
-          <div style={{ fontSize: 12.5, color: INK_SOFT, lineHeight: 1.55, fontFamily: FB }}>
-            {desc}
-          </div>
+          <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 15.5, color: INK, marginBottom: 10, lineHeight: 1.3 }}>{question}</div>
+          <div style={{ fontSize: 12.5, color: INK_SOFT, lineHeight: 1.55, fontFamily: FB }}>{desc}</div>
         </div>
       </div>
-      <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ padding: '0 20px 20px', display: 'flex', gap: 10 }}>
         <div style={{
           background: INK, color: '#fff', fontFamily: FD, fontWeight: 700, fontSize: 11.5,
           padding: '8px 14px', border: `2px solid ${BORDER}`, borderRadius: 8,
@@ -87,79 +203,110 @@ function WhyCard({ question, desc, cta }: { question: string; desc: string; cta:
   )
 }
 
-function FeatureCard({ icon, iconBg, name, sub }: {
-  icon: string; iconBg: string; name: string; sub: string
-}) {
+function FeatureCard({ k, iconBg, name, sub }: { k: string; iconBg: string; name: string; sub: string }) {
   return (
     <div style={{
-      background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 12,
+      background: WINDOW, border: `2px solid ${BORDER}`, borderRadius: 16,
       overflow: 'hidden', boxShadow: `4px 4px 0 ${BORDER}`,
+      padding: 12,
     }}>
       <div style={{
-        background: iconBg, height: 86, display: 'flex',
-        alignItems: 'center', justifyContent: 'center', fontSize: 26,
-        borderBottom: `2px solid ${BORDER}`,
-      }}>{icon}</div>
-      <div style={{ padding: '11px 12px 13px' }}>
-        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12.5, color: INK, marginBottom: 3, lineHeight: 1.25 }}>{name}</div>
-        <div style={{ fontFamily: FV, fontSize: 12, color: INK_SOFT, letterSpacing: '0.02em' }}>{sub}</div>
+        background: iconBg, height: 120, display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        border: `2px solid ${BORDER}`, borderRadius: 10,
+        marginBottom: 12,
+      }}>
+        <FeatureSVGIcon k={k} />
+      </div>
+      <div style={{ textAlign: 'center', paddingBottom: 6 }}>
+        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, color: INK, marginBottom: 3, lineHeight: 1.25 }}>{name}</div>
+        <div style={{ fontFamily: FV, fontSize: 13, color: INK_SOFT, letterSpacing: '0.02em' }}>{sub}</div>
       </div>
     </div>
   )
 }
 
-function PaintCard({ name, desc, gradient, icon, filename }: {
-  name: string; desc: string; gradient: string; icon: string; filename: string
+function PaintCard({ name, desc, screenshot, filename, onPrev, onNext, current, total }: {
+  name: string; desc: string; screenshot: string; filename: string;
+  onPrev: () => void; onNext: () => void; current: number; total: number;
 }) {
   return (
     <div style={{
-      background: WINDOW, border: `2.5px solid ${BORDER}`, borderRadius: 14,
-      overflow: 'hidden', boxShadow: `5px 5px 0 ${BORDER}`,
+      background: WINDOW, border: `2.5px solid ${BORDER}`, borderRadius: 16,
+      overflow: 'hidden', boxShadow: `8px 8px 0 ${BORDER}`,
     }}>
       <div style={{
         background: 'linear-gradient(180deg, #F0EEF8 0%, #D8D4EC 100%)',
         borderBottom: `2px solid ${BORDER}`,
-        padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8,
-        fontFamily: FV, fontSize: 11.5, color: INK, fontWeight: 700, letterSpacing: '0.03em',
+        padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10,
+        fontFamily: FV, fontSize: 13, color: INK, fontWeight: 700, letterSpacing: '0.03em',
       }}>
-        <TrafficLights size={8} />
+        <TrafficLights size={10} />
         PAINT — {filename}
       </div>
       <div style={{ display: 'flex' }}>
         <div style={{
-          width: 32, flexShrink: 0, background: '#E8E4F0', borderRight: `1.5px solid ${BORDER}`,
-          padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center',
+          width: 44, flexShrink: 0, background: '#E8E4F0', borderRight: `2px solid ${BORDER}`,
+          padding: '10px 6px', display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center',
         }}>
           {[
             { bg: GOLD, label: '✏' },
-            { bg: '#fff', label: '◫' },
-            { bg: '#fff', label: '○' },
-            { bg: '#fff', label: '□' },
-            { bg: '#fff', label: '⧖' },
+            { bg: WINDOW, label: '◫' },
+            { bg: WINDOW, label: '○' },
+            { bg: WINDOW, label: '□' },
+            { bg: WINDOW, label: '⧖' },
           ].map((t, i) => (
             <div key={i} style={{
-              width: 22, height: 22, border: `1.5px solid ${BORDER}`, borderRadius: 4,
+              width: 28, height: 28, border: `2px solid ${BORDER}`, borderRadius: 5,
               background: t.bg, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: 9, color: INK, fontWeight: 700,
+              justifyContent: 'center', fontSize: 11, color: INK, fontWeight: 700,
+              boxShadow: i === 0 ? `2px 2px 0 ${BORDER}` : 'none',
             }}>{t.label}</div>
           ))}
         </div>
-        <div style={{
-          flex: 1, background: gradient, minHeight: 118,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 38,
-        }}>{icon}</div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={screenshot}
+          alt={name}
+          style={{ flex: 1, height: 280, objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+        />
       </div>
-      <div style={{ padding: '12px 14px', borderTop: `1.5px solid ${BORDER}` }}>
-        <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 13.5, color: INK, marginBottom: 5 }}>{name}</div>
-        <div style={{ fontSize: 11.5, color: INK_SOFT, lineHeight: 1.45, fontFamily: FB }}>{desc}</div>
+      <div style={{ padding: '18px 20px 14px', borderTop: `2px solid ${BORDER}` }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+          <div>
+            <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 17, color: INK, marginBottom: 5 }}>{name}</div>
+            <div style={{ fontSize: 13, color: INK_SOFT, lineHeight: 1.5, fontFamily: FB }}>{desc}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <button onClick={onPrev} style={{
+              width: 36, height: 36, border: `2px solid ${BORDER}`, borderRadius: 8, background: WINDOW,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: FV, fontSize: 14, fontWeight: 700, color: INK, boxShadow: `2px 2px 0 ${BORDER}`,
+            }}>&#9612;&#9664;</button>
+            <button onClick={onNext} style={{
+              width: 36, height: 36, border: `2px solid ${BORDER}`, borderRadius: 8, background: WINDOW,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: FV, fontSize: 14, fontWeight: 700, color: INK, boxShadow: `2px 2px 0 ${BORDER}`,
+            }}>&#9654;&#9612;</button>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {Array.from({ length: total }).map((_, i) => (
+            <div key={i} style={{
+              width: 9, height: 9, borderRadius: '50%',
+              background: i === current ? INK : 'rgba(27,21,51,0.22)',
+              border: `1.5px solid ${BORDER}`,
+              transition: 'background 0.2s',
+            }} />
+          ))}
+        </div>
       </div>
       <div style={{
-        borderTop: `1.5px solid ${BORDER}`, padding: '6px 10px',
-        display: 'flex', gap: 4, background: '#F0EEF8',
+        borderTop: `2px solid ${BORDER}`, padding: '8px 14px',
+        display: 'flex', gap: 5, background: '#F0EEF8',
       }}>
-        {[PINK, GOLD, BLUE, LIME, CORAL, INK, '#fff', VIOLET].map((c, i) => (
-          <div key={i} style={{ width: 13, height: 13, background: c, border: `1.5px solid ${BORDER}`, borderRadius: 2 }} />
+        {[PINK, GOLD, BLUE, LIME, '#C9AEEA', INK, WINDOW, VIOLET].map((c, i) => (
+          <div key={i} style={{ width: 16, height: 16, background: c, border: `2px solid ${BORDER}`, borderRadius: 3 }} />
         ))}
       </div>
     </div>
@@ -180,9 +327,7 @@ function FeatureTab({ active, label, desc, onClick }: {
         {active && <span style={{ color: PINK, fontWeight: 800 }}>&#187;</span>}
         {label}
       </div>
-      {active && (
-        <div style={{ fontSize: 12.5, color: INK, lineHeight: 1.55, marginTop: 8, paddingLeft: 18, fontFamily: FB }}>{desc}</div>
-      )}
+      {active && <div style={{ fontSize: 12.5, color: INK, lineHeight: 1.55, marginTop: 8, paddingLeft: 18, fontFamily: FB }}>{desc}</div>}
     </button>
   )
 }
@@ -205,9 +350,7 @@ function MockupSidebar({ activeItem }: { activeItem: string }) {
   const items = ['+ New Project', 'Build Map', 'Levels', 'Prompts', 'Integrations']
   return (
     <div style={{ width: 140, flexShrink: 0, background: WINDOW_ALT, borderRight: `2px solid ${BORDER}`, padding: '14px 12px' }}>
-      <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12.5, color: INK, marginBottom: 14 }}>
-        &#9654; AI with AI
-      </div>
+      <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12.5, color: INK, marginBottom: 14 }}>&#9654; AI with AI</div>
       {items.map(item => (
         <div key={item} style={{
           fontFamily: FV, fontSize: 13, color: item === activeItem ? INK : INK_SOFT,
@@ -266,7 +409,7 @@ function PriceCard({ plan, price, priceSub, features, cta, ctaHref, popular, fil
         fontFamily: FD, fontWeight: 700, fontSize: 14,
         padding: '12px', border: `2.5px solid ${BORDER}`, borderRadius: 10,
         background: filled ? VIOLET : '#fff', color: filled ? '#fff' : INK,
-        boxShadow: `3px 3px 0 ${BORDER}`, textDecoration: 'none', boxSizing: 'border-box',
+        boxShadow: `3px 3px 0 ${BORDER}`, textDecoration: 'none', boxSizing: 'border-box' as const,
       }}>{cta}</Link>
     </div>
   )
@@ -340,9 +483,9 @@ function FixedFooter({ marqueeFull, time }: { marqueeFull: string; time: string 
             { label: 'Features', color: GOLD },
             { label: 'Guided Build', color: LIME },
             { label: 'How It Works', color: PINK },
-            { label: 'Built With', color: CORAL },
+            { label: 'Built With', color: BLUE },
             { label: 'Pricing', color: GOLD },
-            { label: 'FAQ', color: BLUE },
+            { label: 'FAQ', color: VIOLET },
           ].map(tab => (
             <div key={tab.label} style={{
               display: 'flex', alignItems: 'center', gap: 5,
@@ -360,92 +503,11 @@ function FixedFooter({ marqueeFull, time }: { marqueeFull: string; time: string 
   )
 }
 
-/* ── Feature data ── */
-
-const FEATURES = [
-  { icon: '💬', iconBg: BLUE,   name: 'Idea Intake Chat',          sub: 'PRD chat' },
-  { icon: '📋', iconBg: GOLD,   name: 'Auto-Generated PRD',        sub: 'Auto PRD' },
-  { icon: '⚡', iconBg: VIOLET, name: 'Agentify My App',           sub: 'App audit' },
-  { icon: '🛡️', iconBg: PINK,   name: 'Domain-Risk Check',         sub: 'Risk check' },
-  { icon: '🗺️', iconBg: LIME,   name: 'Build Map',                 sub: 'Build steps' },
-  { icon: '🎯', iconBg: CORAL,  name: 'Build Coach',               sub: 'Step coach' },
-  { icon: '🔧', iconBg: GOLD,   name: 'Tool 101',                  sub: 'Tool setup' },
-  { icon: '📚', iconBg: BLUE,   name: 'Living Documentation',      sub: 'Auto docs' },
-  { icon: '⚖️', iconBg: VIOLET, name: 'Decision-Rights Matrix',    sub: 'Governance doc' },
-  { icon: '✅', iconBg: LIME,   name: 'Auto-Suggest Checkpoints',  sub: 'Checkpoints' },
-  { icon: '📶', iconBg: PINK,   name: 'Level Map',                 sub: 'Skill levels' },
-  { icon: '🧠', iconBg: CORAL,  name: 'Persistent Project Memory', sub: 'Project memory' },
-  { icon: '🚀', iconBg: GOLD,   name: 'Build Your Riskiest Page',  sub: 'Free trial' },
-  { icon: '📤', iconBg: BLUE,   name: 'Multi-Editor Prompt Export',sub: 'Prompt export' },
-  { icon: '📌', iconBg: VIOLET, name: 'Doc-Grounded Prompts',      sub: 'Grounded AI' },
-  { icon: '🔔', iconBg: PINK,   name: 'Stalled-Project Nudge',     sub: 'Re-engagement' },
-  { icon: '💳', iconBg: LIME,   name: 'Subscription & Billing',    sub: 'Paid tier' },
-  { icon: '🏠', iconBg: CORAL,  name: 'Dashboard',                 sub: 'Project hub' },
-]
-
-const BUILT_WITH = [
-  {
-    name: 'Briefly Brilliant',
-    desc: 'LSAT prep app with diagnostic scoring and personalized study plans',
-    gradient: 'linear-gradient(135deg, #C9AEEA 0%, #9B7FD1 100%)',
-    icon: '📖',
-    filename: 'BRIEFLY_BRILLIANT.APP',
-  },
-  {
-    name: 'Persist',
-    desc: 'Student engagement platform sending encouragement nudges for self-paced courses',
-    gradient: 'linear-gradient(135deg, #FF9EBD 0%, #FF6B6B 100%)',
-    icon: '⚡',
-    filename: 'PERSIST.APP',
-  },
-  {
-    name: 'Bordermath',
-    desc: 'Visa compliance tracker for stay limits and entry rules across countries',
-    gradient: 'linear-gradient(135deg, #5FD98A 0%, #4ECDC4 100%)',
-    icon: '🌍',
-    filename: 'BORDERMATH.APP',
-  },
-  {
-    name: 'Vibe Labs',
-    desc: 'Skill-assessment platform scoring your Vibe Quotient across five competencies',
-    gradient: 'linear-gradient(135deg, #FFCB33 0%, #FF5FA8 100%)',
-    icon: '🎮',
-    filename: 'VIBE_LABS.APP',
-  },
-  {
-    name: 'Skillpath',
-    desc: 'Personalized learning-path app that turns any skill goal into a trackable curriculum',
-    gradient: 'linear-gradient(135deg, #5C7CFA 0%, #9B7FD1 100%)',
-    icon: '🗺️',
-    filename: 'SKILLPATH.APP',
-  },
-  {
-    name: 'Detour',
-    desc: 'Scenario-comparison tool for modeling major life decisions side by side',
-    gradient: 'linear-gradient(135deg, #FFB347 0%, #FF6B9D 100%)',
-    icon: '🔀',
-    filename: 'DETOUR.APP',
-  },
-  {
-    name: 'Pigeon',
-    desc: 'AI email-sequence generator that learns your brand voice for drip campaigns',
-    gradient: 'linear-gradient(135deg, #87CEEB 0%, #5C7CFA 100%)',
-    icon: '🐦',
-    filename: 'PIGEON.APP',
-  },
-  {
-    name: 'The Automated CMO',
-    desc: 'AI marketing platform with nine ready-to-use agents for strategy and content',
-    gradient: 'linear-gradient(135deg, #FFCB33 0%, #FF7B54 100%)',
-    icon: '📣',
-    filename: 'AUTOMATED_CMO.APP',
-  },
-]
-
 /* ── Main component ── */
 
 export default function HomeClient() {
   const [activeTab, setActiveTab] = useState(1)
+  const [activeProject, setActiveProject] = useState(0)
   const [time, setTime] = useState('')
 
   useEffect(() => {
@@ -463,15 +525,18 @@ export default function HomeClient() {
   }, [])
 
   const marqueeFull = MARQUEE_TEXT + MARQUEE_TEXT
+  const prev = () => setActiveProject(i => (i - 1 + BUILT_WITH.length) % BUILT_WITH.length)
+  const next = () => setActiveProject(i => (i + 1) % BUILT_WITH.length)
 
   return (
-    <div style={{ minHeight: '100vh', paddingBottom: 120, position: 'relative' }}>
+    <div style={{ minHeight: '100vh', paddingBottom: 120, position: 'relative',
+      backgroundImage: BG_IMAGE, backgroundSize: BG_SIZE, backgroundAttachment: 'fixed' }}>
 
+      {/* Hides the dark globals.css body background */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 0, pointerEvents: 'none',
-        backgroundImage: BG_IMAGE,
-        backgroundSize: BG_SIZE,
+        zIndex: -1, pointerEvents: 'none',
+        backgroundImage: BG_IMAGE, backgroundSize: BG_SIZE,
       }} />
 
       <LandingNav />
@@ -506,27 +571,19 @@ export default function HomeClient() {
             padding: '8px 18px', display: 'flex', alignItems: 'center', gap: 10,
             fontFamily: FV, fontSize: 14, color: INK_SOFT,
           }}>
-            <span>&#8592;</span>
-            <span>&#8594;</span>
-            <span>&#8635;</span>
+            <span>&#8592;</span><span>&#8594;</span><span>&#8635;</span>
             <div style={{
               flex: 1, background: '#fff', border: `1.5px solid ${BORDER}`, borderRadius: 100,
               padding: '5px 14px', display: 'flex', alignItems: 'center', gap: 6, maxWidth: 320,
             }}>&#128274; build-ai-with-ai.app</div>
           </div>
           <div style={{ padding: '40px 40px 44px', textAlign: 'center' }}>
-            <h1 style={{
-              fontFamily: FD, fontWeight: 800, fontSize: 44, lineHeight: 1.12,
-              color: INK, margin: '0 0 6px',
-            }}>
+            <h1 style={{ fontFamily: FD, fontWeight: 800, fontSize: 44, lineHeight: 1.12, color: INK, margin: '0 0 6px' }}>
               Your AI{' '}
               <em style={{ fontFamily: FC, fontWeight: 700, color: VIOLET, fontSize: '1.15em', fontStyle: 'normal' }}>co-builder.</em>
               <br />One step at a time.
             </h1>
-            <p style={{
-              fontSize: 16, color: INK_SOFT, maxWidth: 500, margin: '14px auto 30px',
-              lineHeight: 1.6, fontWeight: 500, fontFamily: FB,
-            }}>
+            <p style={{ fontSize: 16, color: INK_SOFT, maxWidth: 500, margin: '14px auto 30px', lineHeight: 1.6, fontWeight: 500, fontFamily: FB }}>
               Describe what you want to build. Build AI with AI walks you through it — prompt by prompt, level by level — until it&apos;s actually shipped.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 26 }}>
@@ -570,78 +627,44 @@ export default function HomeClient() {
 
         {/* ── WHY ── */}
         <div style={{ marginTop: 76 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 30, flexWrap: 'wrap' }}>
-            <div style={{ maxWidth: 480 }}>
-              <span style={{ display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', color: PINK, marginBottom: 10 }}>Why Build AI with AI</span>
-              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, lineHeight: 1.25, color: INK }}>
-                A real co-builder,<br />
-                <span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>not a chat window in disguise</span>
-              </div>
-            </div>
-            <div style={{ maxWidth: 290, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.6, paddingBottom: 4, fontFamily: FB }}>
-              Most AI tools answer questions. Build AI with AI takes initiative — planning your build, writing the exact prompts, and getting sharper about your project with every step.
-            </div>
-          </div>
+          <SectionHeader
+            label="Why Build AI with AI"
+            labelColor={PINK}
+            title="A real co-builder,"
+            accent="not a chat window in disguise"
+            desc="Most AI tools answer questions. Build AI with AI takes initiative — planning your build, writing the exact prompts, and getting sharper about your project with every step."
+          />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 20 }}>
-            <WhyCard
-              question="Is your context being remembered?"
-              desc="It remembers your project, your stack, and your past decisions — so you never have to re-explain yourself at the start of every session."
-              cta="YES, LOAD MY PROJECT →"
-            />
-            <WhyCard
-              question="Does your AI actually do the work?"
-              desc="Every step comes with the exact prompt to paste and a verification checklist — not just advice you have to translate yourself."
-              cta="YES, BUILD WITH ME →"
-            />
-            <WhyCard
-              question="Is it tuned for your specific tools?"
-              desc="Plans are written for the tool you actually build in — Claude Code, Codex, Zapier, Make — no translating generic advice into your stack."
-              cta="YES, USE MY STACK →"
-            />
-            <WhyCard
-              question="Does it actually get better over time?"
-              desc="11 levels, from 'type prompts and hope' to autonomous agents. Real skills, real builds, not synthetic busywork."
-              cta="YES, LEVEL UP →"
-            />
+            <WhyCard question="Is your context being remembered?" desc="It remembers your project, your stack, and your past decisions — so you never have to re-explain yourself at the start of every session." cta="YES, LOAD MY PROJECT →" />
+            <WhyCard question="Does your AI actually do the work?" desc="Every step comes with the exact prompt to paste and a verification checklist — not just advice you have to translate yourself." cta="YES, BUILD WITH ME →" />
+            <WhyCard question="Is it tuned for your specific tools?" desc="Plans are written for the tool you actually build in — Claude Code, Codex, Zapier, Make — no translating generic advice into your stack." cta="YES, USE MY STACK →" />
+            <WhyCard question="Does it actually get better over time?" desc="11 levels, from 'type prompts and hope' to autonomous agents. Real skills, real builds, not synthetic busywork." cta="YES, LEVEL UP →" />
           </div>
         </div>
 
         {/* ── FEATURES ── */}
         <div style={{ marginTop: 76 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 30, flexWrap: 'wrap' }}>
-            <div style={{ maxWidth: 480 }}>
-              <span style={{ display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', color: GOLD, marginBottom: 10 }}>Everything inside</span>
-              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, lineHeight: 1.25, color: INK }}>
-                18 features.<br />
-                <span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>One build system.</span>
-              </div>
-            </div>
-            <div style={{ maxWidth: 290, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.6, paddingBottom: 4, fontFamily: FB }}>
-              From your first idea intake to your final deploy — every tool you need to go from zero to shipped is already here.
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
-            {FEATURES.map(f => (
-              <FeatureCard key={f.name} icon={f.icon} iconBg={f.iconBg} name={f.name} sub={f.sub} />
-            ))}
+          <SectionHeader
+            label="Everything inside"
+            labelColor={GOLD}
+            title="18 features."
+            accent="One build system."
+            desc="From your first idea intake to your final deploy — every tool you need to go from zero to shipped is already here."
+          />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+            {FEATURES.map(f => <FeatureCard key={f.name} {...f} />)}
           </div>
         </div>
 
         {/* ── GUIDED BUILDING ── */}
         <div style={{ marginTop: 76 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 30, flexWrap: 'wrap' }}>
-            <div style={{ maxWidth: 480 }}>
-              <span style={{ display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', color: PINK, marginBottom: 10 }}>Guided Building</span>
-              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, lineHeight: 1.25, color: INK }}>
-                Describe it once.<br />
-                <span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>It builds the rest.</span>
-              </div>
-            </div>
-            <div style={{ maxWidth: 290, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.6, paddingBottom: 4, fontFamily: FB }}>
-              Describe your build in plain language. Build AI with AI breaks it into levels, generates the exact prompts, and keeps you moving until it&apos;s shipped.
-            </div>
-          </div>
-
+          <SectionHeader
+            label="Guided Building"
+            labelColor={PINK}
+            title="Describe it once."
+            accent="It builds the rest."
+            desc="Describe your build in plain language. Build AI with AI breaks it into levels, generates the exact prompts, and keeps you moving until it's shipped."
+          />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 36, alignItems: 'start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <FeatureTab active={activeTab === 1} label="Natural language input" desc="Just describe it — 'a tracker for my Schengen visa days' or 'a Slack digest of stale PRs.' No forms, no jargon." onClick={() => setActiveTab(1)} />
@@ -649,7 +672,6 @@ export default function HomeClient() {
               <FeatureTab active={activeTab === 3} label="Human-in-the-loop checkpoints" desc="One step at a time, with the exact prompt to paste and a verification checklist — you mark it done, not the AI." onClick={() => setActiveTab(3)} />
               <FeatureTab active={activeTab === 4} label="Persistent project memory" desc="Your stack, your tool, your current level — remembered, so every session picks up exactly where the last one left off." onClick={() => setActiveTab(4)} />
             </div>
-
             <div style={{ background: WINDOW, border: `2.5px solid ${BORDER}`, borderRadius: 14, overflow: 'hidden', boxShadow: `6px 6px 0 ${BORDER}` }}>
               <MockupTitlebar title={['new_build.app', 'build_map.app', 'build_coach.app', 'project_memory.app'][activeTab - 1]} />
               {activeTab === 1 && (
@@ -696,7 +718,6 @@ export default function HomeClient() {
                   <div style={{ background: WINDOW_ALT, border: `1.5px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px', fontFamily: FV, fontSize: 12.5, color: INK, marginBottom: 12, lineHeight: 1.5 }}>
                     &ldquo;Add a function that calculates rolling 90-day Schengen usage from an array of trip date ranges, and show the days remaining on the dashboard.&rdquo;
                   </div>
-                  <div style={{ fontFamily: FV, fontSize: 10.5, letterSpacing: '0.08em', color: INK_SOFT, opacity: 0.7, margin: '0 0 6px' }}>VERIFY BEFORE MARKING DONE</div>
                   {[
                     { done: true, text: 'Function returns correct day count' },
                     { done: true, text: 'Dashboard shows days remaining' },
@@ -732,7 +753,6 @@ export default function HomeClient() {
         <div id="how-it-works" style={{ marginTop: 76 }}>
           <div style={{ textAlign: 'center', fontFamily: FV, fontSize: 14, letterSpacing: '0.15em', color: INK, opacity: 0.65, marginBottom: 10, fontWeight: 700 }}>HOW IT WORKS</div>
           <div style={{ textAlign: 'center', fontFamily: FD, fontWeight: 800, fontSize: 30, color: INK, marginBottom: 34 }}>Describe it. Build it. Ship it.</div>
-
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 30 }}>
             {[
               { n: '01', title: 'Describe what you want', desc: "No forms, no jargon. Just tell it what you're trying to build or fix." },
@@ -747,7 +767,6 @@ export default function HomeClient() {
               </div>
             ))}
           </div>
-
           <div style={{ background: WINDOW, border: `2.5px solid ${BORDER}`, borderRadius: 16, overflow: 'hidden', boxShadow: `6px 6px 0 ${BORDER}` }}>
             <div style={{ background: `linear-gradient(90deg, ${GOLD} 0%, #FFE08A 100%)`, borderBottom: `2.5px solid ${BORDER}`, padding: '11px 18px', display: 'flex', alignItems: 'center', gap: 10, fontFamily: FV, fontWeight: 700, fontSize: 15, color: INK }}>
               <TrafficLights size={9} />
@@ -777,23 +796,21 @@ export default function HomeClient() {
 
         {/* ── BUILT WITH ── */}
         <div style={{ marginTop: 76 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 30, marginBottom: 30, flexWrap: 'wrap' }}>
-            <div style={{ maxWidth: 480 }}>
-              <span style={{ display: 'inline-block', fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.1em', color: CORAL, marginBottom: 10 }}>Built with Build AI with AI</span>
-              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, lineHeight: 1.25, color: INK }}>
-                Real apps,<br />
-                <span style={{ color: INK_SOFT, fontStyle: 'italic', fontWeight: 700 }}>actually shipped.</span>
-              </div>
-            </div>
-            <div style={{ maxWidth: 290, fontSize: 13.5, color: INK_SOFT, lineHeight: 1.6, paddingBottom: 4, fontFamily: FB }}>
-              Every project below was built using Build AI with AI — from idea intake to deployed app.
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-            {BUILT_WITH.map(p => (
-              <PaintCard key={p.name} name={p.name} desc={p.desc} gradient={p.gradient} icon={p.icon} filename={p.filename} />
-            ))}
-          </div>
+          <SectionHeader
+            label="Built with Build AI with AI"
+            labelColor={BLUE}
+            title="Real apps,"
+            accent="actually shipped."
+            desc="Every project below was built using Build AI with AI — from idea intake to deployed app."
+          />
+          {/* Full-width carousel matches SUPPORTED_TOOLS.EXE container width */}
+          <PaintCard
+            {...BUILT_WITH[activeProject]}
+            onPrev={prev}
+            onNext={next}
+            current={activeProject}
+            total={BUILT_WITH.length}
+          />
         </div>
 
         {/* ── PRICING ── */}
@@ -817,13 +834,7 @@ export default function HomeClient() {
               FAQ.HLP
             </div>
             <div style={{ background: WINDOW_ALT, padding: '14px 18px' }}>
-              {[
-                'What tools does this work with?',
-                'Do I need to know how to code?',
-                'What happens after I finish a level?',
-                'Can I cancel anytime?',
-                'Is my project data private?',
-              ].map(q => (
+              {['What tools does this work with?', 'Do I need to know how to code?', 'What happens after I finish a level?', 'Can I cancel anytime?', 'Is my project data private?'].map(q => (
                 <div key={q} style={{ background: '#fff', border: `2px solid ${BORDER}`, borderRadius: 10, padding: '15px 18px', margin: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, fontFamily: FD, fontWeight: 600, fontSize: 14.5, color: INK }}>
                   {q}
                   <span style={{ fontFamily: FD, fontWeight: 700, color: VIOLET, fontSize: 17, flexShrink: 0 }}>+</span>

@@ -265,7 +265,7 @@ function PaintCard({ name, desc, screenshot, filename, onPrev, onNext, current, 
         <img
           src={screenshot}
           alt={name}
-          style={{ flex: 1, height: 280, objectFit: 'cover', objectPosition: 'top', display: 'block' }}
+          style={{ flex: 1, width: 0, display: 'block', objectFit: 'contain' }}
         />
       </div>
       <div style={{ padding: '18px 20px 14px', borderTop: `2px solid ${BORDER}` }}>

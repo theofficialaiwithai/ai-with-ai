@@ -90,36 +90,42 @@ const BUILT_WITH = [
     desc: 'Personalized learning-path app that turns any skill goal into a curated, trackable path of lessons and resources.',
     screenshot: '/screenshots/skillpath.png',
     filename: 'SKILLPATH.APP',
+    url: 'https://skillpath-hazel.vercel.app/',
   },
   {
     name: 'Vibe Labs',
     desc: 'Scores your Vibe Quotient across five competencies, places you in a tier, and hands you a personalized build challenge.',
     screenshot: '/screenshots/vibe-labs.png',
     filename: 'VIBE_LABS.APP',
+    url: 'https://vibe-lab-api-server.vercel.app/',
   },
   {
     name: 'Pigeon',
     desc: 'AI email-sequence generator that learns your brand voice and builds cohort-based drip campaigns you can export to ConvertKit.',
     screenshot: '/screenshots/pigeon.png',
     filename: 'PIGEON.APP',
+    url: 'https://pigeon-gold.vercel.app/',
   },
   {
     name: 'The Automated CMO',
     desc: 'AI marketing platform that packages strategy, brand, and content toolkits into nine ready-to-use agents.',
     screenshot: '/screenshots/automated-cmo.png',
     filename: 'AUTOMATED_CMO.APP',
+    url: 'https://the-automated-cmo.vercel.app/',
   },
   {
     name: 'Persist',
     desc: 'Student engagement platform sending encouragement nudges and tracking independent progress.',
     screenshot: '/screenshots/persist.png',
     filename: 'PERSIST.APP',
+    url: 'https://persist-app.vercel.app/',
   },
   {
     name: 'Bordermath',
     desc: 'Visa compliance tracker for stay limits and entry rules across the countries you move through.',
     screenshot: '/screenshots/bordermath.png',
     filename: 'BORDERMATH.APP',
+    url: 'https://bordermath-sage.vercel.app/',
   },
 ]
 
@@ -223,8 +229,8 @@ function FeatureCard({ k, iconBg, name, sub }: { k: string; iconBg: string; name
   )
 }
 
-function PaintCard({ name, desc, screenshot, filename, onPrev, onNext, current, total }: {
-  name: string; desc: string; screenshot: string; filename: string;
+function PaintCard({ name, desc, screenshot, filename, url, onPrev, onNext, current, total }: {
+  name: string; desc: string; screenshot: string; filename: string; url: string;
   onPrev: () => void; onNext: () => void; current: number; total: number;
 }) {
   return (
@@ -271,7 +277,7 @@ function PaintCard({ name, desc, screenshot, filename, onPrev, onNext, current, 
       <div style={{ padding: '18px 20px 14px', borderTop: `2px solid ${BORDER}` }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
           <div>
-            <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 17, color: INK, marginBottom: 5 }}>{name}</div>
+            <a href={url} target="_blank" rel="noopener noreferrer" style={{ fontFamily: FD, fontWeight: 800, fontSize: 17, color: INK, marginBottom: 5, display: 'block', textDecoration: 'none' }}>{name} ↗</a>
             <div style={{ fontSize: 13, color: INK_SOFT, lineHeight: 1.5, fontFamily: FB }}>{desc}</div>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>

@@ -84,44 +84,41 @@ const FEATURES = [
 ]
 
 // Free screenshot proxy for public sites — sends the URL to thum.io's servers
-const THUMB = (url: string) =>
-  `https://image.thum.io/get/width/1200/crop/750/noanimate/${url}`
-
 const BUILT_WITH = [
   {
     name: 'Skillpath',
     desc: 'Personalized learning-path app that turns any skill goal into a curated, trackable path of lessons and resources.',
-    screenshot: THUMB('https://skillpath-hazel.vercel.app/'),
+    screenshot: '/screenshots/skillpath.png',
     filename: 'SKILLPATH.APP',
   },
   {
     name: 'Vibe Labs',
     desc: 'Scores your Vibe Quotient across five competencies, places you in a tier, and hands you a personalized build challenge.',
-    screenshot: THUMB('https://vibe-lab-api-server.vercel.app/'),
+    screenshot: '/screenshots/vibe-labs.png',
     filename: 'VIBE_LABS.APP',
   },
   {
     name: 'Pigeon',
     desc: 'AI email-sequence generator that learns your brand voice and builds cohort-based drip campaigns you can export to ConvertKit.',
-    screenshot: THUMB('https://pigeon-gold.vercel.app/'),
+    screenshot: '/screenshots/pigeon.png',
     filename: 'PIGEON.APP',
   },
   {
     name: 'The Automated CMO',
     desc: 'AI marketing platform that packages strategy, brand, and content toolkits into nine ready-to-use agents.',
-    screenshot: THUMB('https://the-automated-cmo.vercel.app/'),
+    screenshot: '/screenshots/automated-cmo.png',
     filename: 'AUTOMATED_CMO.APP',
   },
   {
     name: 'Persist',
     desc: 'Student engagement platform sending encouragement nudges and tracking independent progress.',
-    screenshot: THUMB('https://persist-app.vercel.app/'),
+    screenshot: '/screenshots/persist.png',
     filename: 'PERSIST.APP',
   },
   {
     name: 'Bordermath',
     desc: 'Visa compliance tracker for stay limits and entry rules across the countries you move through.',
-    screenshot: THUMB('https://bordermath-sage.vercel.app/'),
+    screenshot: '/screenshots/bordermath.png',
     filename: 'BORDERMATH.APP',
   },
 ]

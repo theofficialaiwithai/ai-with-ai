@@ -24,12 +24,24 @@ const appearance = {
     fontSize: '14px',
   },
   elements: {
+    rootBox: {
+      width: '100%',
+      display: 'block',
+    },
+    cardBox: {
+      width: '100%',
+      boxShadow: 'none',
+      border: 'none',
+      borderRadius: '0',
+    },
     card: {
       boxShadow: 'none',
       border: 'none',
       borderRadius: '0',
-      padding: '24px 28px',
+      padding: '28px 32px',
       background: '#ffffff',
+      width: '100%',
+      margin: '0',
     },
     headerTitle: {
       fontWeight: '800',
@@ -67,6 +79,9 @@ const appearance = {
     footerActionLink: {
       color: VIOLET,
       fontWeight: '700',
+    },
+    footer: {
+      background: '#ffffff',
     },
     dividerLine: {
       background: 'rgba(27,21,51,0.12)',

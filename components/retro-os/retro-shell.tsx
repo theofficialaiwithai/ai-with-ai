@@ -74,7 +74,7 @@ export default function RetroShell({
             borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 13, color: INK, fontWeight: 700, flexShrink: 0,
           }}>▶</div>
-          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: '#fff' }}>AI with AI</span>
+          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: '#fff' }}>Build AI with AI</span>
         </div>
 
         {/* Tabs */}

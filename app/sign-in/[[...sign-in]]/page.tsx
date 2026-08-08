@@ -127,7 +127,7 @@ export default function SignInPage() {
             borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 13, color: '#fff', fontWeight: 700,
           }}>&#9654;</div>
-          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: '#fff' }}>AI with AI</span>
+          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: '#fff' }}>Build AI with AI</span>
         </Link>
         <Link href="/sign-up" style={{
           fontFamily: FD, fontWeight: 700, fontSize: 13.5, color: '#fff',

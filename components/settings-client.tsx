@@ -483,7 +483,7 @@ export default function SettingsClient({
               color: '#9D5AF0', padding: 0,
             }}
           >
-            ← AI with AI
+            ← Build AI with AI
           </button>
           <h1 style={{ fontFamily: FD, fontWeight: 700, fontSize: 18, color: '#F8FAFC', margin: 0 }}>
             Settings

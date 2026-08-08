@@ -46,7 +46,7 @@ export default function SignUpPage() {
             marginBottom: '0.5rem',
           }}
         >
-          AI with AI
+          Build AI with AI
         </h1>
         <p style={{ color: '#94A3B8', fontFamily: 'Inter, sans-serif', fontSize: '0.95rem' }}>
           Build more. Get stuck less.

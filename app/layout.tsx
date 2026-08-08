@@ -36,7 +36,7 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
-  title: "AI with AI",
+  title: "Build AI with AI",
   description: "Build AI apps with AI guidance",
 };
 

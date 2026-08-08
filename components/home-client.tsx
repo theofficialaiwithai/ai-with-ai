@@ -353,7 +353,7 @@ function MockupSidebar({ activeItem }: { activeItem: string }) {
   const items = ['+ New Project', 'Build Map', 'Levels', 'Prompts', 'Integrations']
   return (
     <div style={{ width: 140, flexShrink: 0, background: WINDOW_ALT, borderRight: `2px solid ${BORDER}`, padding: '14px 12px' }}>
-      <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12.5, color: INK, marginBottom: 14 }}>&#9654; AI with AI</div>
+      <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: INK, marginBottom: 14 }}>&#9654; Build AI with AI</div>
       {items.map(item => (
         <div key={item} style={{
           fontFamily: FV, fontSize: 13, color: item === activeItem ? INK : INK_SOFT,
@@ -431,7 +431,7 @@ function LandingNav() {
           borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 13, color: '#fff', fontWeight: 700,
         }}>&#9654;</div>
-        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: '#fff' }}>AI with AI</span>
+        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: '#fff' }}>Build AI with AI</span>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <Link href="/sign-in" style={{
@@ -553,7 +553,7 @@ export default function HomeClient() {
             fontFamily: FV, fontSize: 14, fontWeight: 700, letterSpacing: '0.06em',
             color: GOLD, border: `1.5px solid ${GOLD}`, borderRadius: 100, padding: '4px 14px',
             background: 'rgba(255,203,51,0.08)',
-          }}>AI WITH AI &#183; OPEN BETA</span>
+          }}>BUILD AI WITH AI &#183; OPEN BETA</span>
         </div>
 
         <div style={{

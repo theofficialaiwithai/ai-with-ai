@@ -337,7 +337,7 @@ export default function DashboardClient({ profile, sessions }: Props) {
             ▸
           </div>
           <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 15, color: '#F8FAFC' }}>
-            AI with AI
+            Build AI with AI
           </span>
         </div>
 
